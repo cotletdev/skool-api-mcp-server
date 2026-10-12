@@ -25,7 +25,7 @@ API_BASE = os.environ.get("COTLET_API_BASE", "https://cotlet.dev/api/v1")
 APP = "skool"
 SIGNUP_URL = "https://cotlet.dev/app/signup?app=skool"
 DOCS_URL = "https://cotlet.dev/integrations/skool-api-mcp-server"
-USER_AGENT = "cotletdev-skool-api/1.0 (+https://github.com/cotletdev/skool-api)"
+USER_AGENT = "cotletdev-skool-api-mcp-server/1.0 (+https://github.com/cotletdev/skool-api-mcp-server)"
 
 
 class CotletError(Exception):

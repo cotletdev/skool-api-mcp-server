@@ -1,17 +1,25 @@
-# Skool API for Python (and an MCP server for Claude)
+# Skool API and MCP Server
 
-Python scripts to **export Skool members**, **approve membership requests**, **export posts**, **read and send Skool Chat DMs**, **publish and pin posts** and **pull members, churn and MRR stats** from your own Skool community. One file per job, standard library only, no browser, no cookies to copy.
+**Skool API** for Python scripts and a hosted **Skool MCP server** for Claude, ChatGPT, Cursor, Codex and n8n. Export Skool members to CSV, approve membership requests, export and publish posts, read and send Skool Chat DMs and pull members, churn and MRR stats from your own Skool community.
 
-Skool has no public API. These scripts call the **hosted Skool API by [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server)**: you sign in to Skool once in your browser, Cotlet keeps the session working, and every script here (or your AI agent over MCP) works in your account.
+Skool has no public API and no official MCP server. This repo gives you both, on top of the **hosted Skool API by [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server)**: you sign in to Skool once in your browser, Cotlet keeps the session working, and your AI agent (over MCP) or the Python scripts here (over the REST API) work in your account with one API key.
+
+- **Skool MCP server:** `https://cotlet.dev/mcp/v1`, 15 Skool tools for your AI agent. [Setup](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex)
+- **Skool API:** `https://cotlet.dev/api/v1/skool/{endpoint}`, plus 16 ready Python scripts, one file per job, standard library only. [Scripts](#scripts)
 
 [![Skool API docs](https://img.shields.io/badge/Skool%20API-docs-6d4aef)](https://cotlet.dev/docs/api/skool)
-[![MCP server](https://img.shields.io/badge/MCP-cotlet.dev%2Fmcp%2Fv1-6d4aef)](https://cotlet.dev/docs/mcp)
+[![Skool MCP server](https://img.shields.io/badge/Skool%20MCP%20server-cotlet.dev%2Fmcp%2Fv1-6d4aef)](https://cotlet.dev/docs/mcp)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-141318)](#requirements)
 [![No dependencies](https://img.shields.io/badge/dependencies-none-141318)](#requirements)
 [![License: MIT](https://img.shields.io/badge/license-MIT-141318)](LICENSE)
 
 ```bash
-git clone https://github.com/cotletdev/skool-api.git && cd skool-api
+# Skool MCP server for your AI agent (Claude Code)
+claude mcp add --transport http cotlet https://cotlet.dev/mcp/v1 \
+  --header "Authorization: Bearer $COTLET_API_KEY"
+
+# Skool API from Python
+git clone https://github.com/cotletdev/skool-api-mcp-server.git && cd skool-api-mcp-server
 export COTLET_API_KEY=cotlet_...          # https://cotlet.dev/app/signup?app=skool
 python export_members.py --group yourgroup --out members.csv
 ```
@@ -21,7 +29,7 @@ python export_members.py --group yourgroup --out members.csv
 - [How it works](#how-it-works)
 - [Quick start](#quick-start)
 - [Scripts](#scripts)
-- [Use it from Claude, Cursor or Codex (MCP)](#use-it-from-claude-cursor-or-codex-mcp)
+- [Skool MCP server for Claude, ChatGPT, Cursor and Codex](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex)
 - [Run it on a schedule: cron, GitHub Actions, n8n, Make, Zapier](#run-it-on-a-schedule)
 - [Skool API endpoints](#skool-api-endpoints)
 - [FAQ](#faq)
@@ -51,8 +59,8 @@ Without a key, or before your access is active, the API answers `403` with a lin
 ### Setup
 
 ```bash
-git clone https://github.com/cotletdev/skool-api.git
-cd skool-api
+git clone https://github.com/cotletdev/skool-api-mcp-server.git
+cd skool-api-mcp-server
 cp .env.example .env          # paste your key into .env, or:
 export COTLET_API_KEY=cotlet_...
 ```
@@ -121,9 +129,9 @@ call("create_post", {"group": "yourgroup", "category": "Announcements",
 
 Approving, declining, posting, commenting and sending DMs go out under your name. By default each of these calls waits for your OK: the script prints a link, you approve it in the browser, and the script continues. For unattended runs (cron, GitHub Actions), switch confirmation off for the tools you choose in the Cotlet dashboard, for example only for `approve_membership_request`. Pinning runs without asking.
 
-## Use it from Claude, Cursor or Codex (MCP)
+## Skool MCP server for Claude, ChatGPT, Cursor and Codex
 
-The same Skool API is a hosted MCP server, so your AI agent can do all of this in plain words. Same key.
+The same Skool API is a hosted Skool MCP server, so your AI agent can do all of this in plain words. Nothing to install or run: one URL, same key. A ready config is in [`mcp.json`](mcp.json).
 
 ```bash
 # Claude Code
@@ -168,7 +176,7 @@ Tools show up as `skool_list_members`, `skool_approve_membership_request` and so
 
 | Where | How |
 |---|---|
-| **cron** | `0 8 * * * cd ~/skool-api && python3 approve_membership_requests.py --group yourgroup --match business` |
+| **cron** | `0 8 * * * cd ~/skool-api-mcp-server && python3 approve_membership_requests.py --group yourgroup --match business` |
 | **GitHub Actions** | Fork this repo, add the `COTLET_API_KEY` secret, set your group in [`.github/workflows/skool-daily.yml`](.github/workflows/skool-daily.yml) and uncomment the schedule. |
 | **n8n** | MCP Client node with `https://cotlet.dev/mcp/v1`, or an HTTP Request node: `POST https://cotlet.dev/api/v1/skool/{endpoint}` with `Authorization: Bearer <key>`. Trigger: Schedule. |
 | **Make** | HTTP module, same URL, header and JSON body. Scenario schedule. |
@@ -261,8 +269,8 @@ You automate your own Skool account with your own login, to do what you could do
 **Can I use it with n8n, Make or Zapier?**
 Yes. Use the MCP Client node in n8n, or an HTTP request in any of them: `POST https://cotlet.dev/api/v1/skool/{endpoint}` with your key. See [Run it on a schedule](#run-it-on-a-schedule).
 
-**Can I use it with Claude, ChatGPT or Cursor?**
-Yes. Add the hosted MCP server `https://cotlet.dev/mcp/v1`. See [MCP setup](#use-it-from-claude-cursor-or-codex-mcp).
+**Is there a Skool MCP server? Can I use it with Claude, ChatGPT or Cursor?**
+Yes. Add the hosted Skool MCP server `https://cotlet.dev/mcp/v1`. See [Skool MCP server setup](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex).
 
 **How is this different from open-source Skool MCP servers or Apify actors?**
 Open-source Skool MCP servers run on your computer with your session cookie in a local file, and stop working when Skool changes until someone fixes them. Apify actors bill per run on Apify. Cotlet is hosted, tested daily, keeps your session in an encrypted EU vault, gives you both a REST API and an MCP server with one key, and refunds credits for failed calls. If you would rather run and fix your own code, an open-source server may suit you better.
@@ -274,7 +282,7 @@ See [Pricing](#pricing). Failed calls are free.
 3.9 or newer. No dependencies.
 
 **My Skool community is not working / I need another endpoint.**
-Email [contact@cotlet.dev](mailto:contact@cotlet.dev) with the `X-Request-Id` from the error, or [open an issue](https://github.com/cotletdev/skool-api/issues).
+Email [contact@cotlet.dev](mailto:contact@cotlet.dev) with the `X-Request-Id` from the error, or [open an issue](https://github.com/cotletdev/skool-api-mcp-server/issues).
 
 ## Pricing
 

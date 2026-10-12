@@ -5,3 +5,4 @@ __pycache__/
 *.csv
 *.json
 !.github/**/*.json
+!mcp.json
