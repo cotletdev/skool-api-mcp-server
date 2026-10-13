@@ -314,6 +314,7 @@ More: [cotlet.dev/security](https://cotlet.dev/security).
 - Skool use cases: [auto-approve membership requests](https://cotlet.dev/integrations/skool-api-mcp-server/auto-approve-membership-requests), [weekly posts](https://cotlet.dev/integrations/skool-api-mcp-server/schedule-weekly-posts), [reply to unanswered posts](https://cotlet.dev/integrations/skool-api-mcp-server/reply-to-unanswered-posts), [answer Skool Chat](https://cotlet.dev/integrations/skool-api-mcp-server/answer-skool-chat-messages), [welcome new members](https://cotlet.dev/integrations/skool-api-mcp-server/welcome-new-members), [MRR and churn report](https://cotlet.dev/integrations/skool-api-mcp-server/weekly-mrr-churn-report)
 - All apps without an API on Cotlet: [cotlet.dev/integrations](https://cotlet.dev/integrations)
 - About Cotlet: [github.com/cotletdev/cotlet](https://github.com/cotletdev/cotlet)
+- Cotlet on X: [@cotletdev](https://x.com/cotletdev)
 
 ---
 
