@@ -35,7 +35,7 @@ class CotletError(Exception):
         self.status = status
         self.code = body.get("error", "unknown_error")
         self.body = body
-        link = body.get("connect_url") or body.get("request_access_url") or body.get("docs_url")
+        link = body.get("browser_url") or body.get("connect_url") or body.get("request_access_url") or body.get("docs_url")
         message = body.get("message", "The request failed.")
         super().__init__(f"{self.code}: {message}" + (f"\n  -> {link}" if link else ""))
 

@@ -2,7 +2,7 @@
 
 **Skool API** for Python scripts and a hosted **Skool MCP server** for Claude, ChatGPT, Cursor, Codex and n8n. Export Skool members to CSV, approve membership requests, export and publish posts, read and send Skool Chat DMs and pull members, churn and MRR stats from your own Skool community.
 
-Skool has no public API and no official MCP server. This repo gives you both, on top of the **hosted Skool API by [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server)**: you sign in to Skool once in your browser, Cotlet keeps the session working, and your AI agent (over MCP) or the Python scripts here (over the REST API) work in your account with one API key.
+Skool has no public API and no official MCP server. This repo gives you both, on top of the **hosted Skool API by [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server)**: you sign in to Skool once in your own Cloud Browser (a Chrome Cotlet runs for you in the cloud), Cotlet keeps you signed in 24/7, and your AI agent (over MCP) or the Python scripts here (over the REST API) work in your account with one API key.
 
 - **Skool MCP server:** `https://cotlet.dev/mcp/v1`, 15 Skool tools for your AI agent. [Setup](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex)
 - **Skool API:** `https://cotlet.dev/api/v1/skool/{endpoint}`, plus 16 ready Python scripts, one file per job, standard library only. [Scripts](#scripts)
@@ -39,11 +39,11 @@ python export_members.py --group yourgroup --out members.csv
 ## How it works
 
 ```text
-your script / AI agent ──HTTPS──▶ Cotlet Skool API ──your session──▶ skool.com (your account)
+your script / AI agent ──HTTPS──▶ Cotlet Skool API ──your Cloud Browser's IP and cookies──▶ skool.com (your account)
 ```
 
-1. **Get an API key.** [Request access at cotlet.dev](https://cotlet.dev/app/signup?app=skool) with Skool selected. Each request is reviewed and the key arrives by email. Every account starts with a free 7-day trial and 5,000 credits, no card needed.
-2. **Connect Skool once.** In the Cotlet console, open the Skool connect page and sign in to Skool the way you always do, including 2FA. Cotlet keeps the session, never your password.
+1. **Get an API key.** [Request access at cotlet.dev](https://cotlet.dev/app/signup?app=skool) with Skool selected. Each request is reviewed and the key arrives by email. Every account starts with a free 7-day trial and 2,000 credits, no card needed.
+2. **Sign in to Skool once.** In the Cotlet console, open your Cloud Browser, sign in to Skool there the way you always do, including 2FA, and press **Enable for agents** (read only or read and write). Password saving is off, so Cotlet never saves your password.
 3. **Run the scripts.** Each one is a plain `POST https://cotlet.dev/api/v1/skool/{endpoint}` with your key. When Skool changes its site, Cotlet fixes the integration; these scripts keep working unchanged.
 
 Without a key, or before your access is active, the API answers `403` with a link to request access.
@@ -53,7 +53,7 @@ Without a key, or before your access is active, the API answers `403` with a lin
 ### Requirements
 
 - Python 3.9 or newer. No `pip install`: the scripts use only the standard library.
-- A Cotlet API key with Skool connected.
+- A Cotlet API key, with Skool enabled for agents in your Cloud Browser.
 - An admin or moderator role in the group for membership requests, and admin for stats and pinning. Members, posts, courses and DMs work with any role in groups you belong to.
 
 ### Setup
@@ -221,10 +221,10 @@ curl -X POST https://cotlet.dev/api/v1/skool/list_members \
 | Status | Code | What to do |
 |---|---|---|
 | 403 | `api_key_required`, `access_not_granted` | Set `COTLET_API_KEY`, or [request access to Skool](https://cotlet.dev/app/signup?app=skool). |
-| 409 | `AUTH_REQUIRED`, `AUTH_EXPIRED` | Skool is not connected or the session expired. Open the link in the error and sign in again. |
-| 409 | `CAPTCHA_REQUIRED`, `MFA_REQUIRED` | Skool asked for a check only you can pass. Finish it on the connect page. |
-| 403 | `SCOPE_DENIED` | You connected Skool read-only. Allow write access in the dashboard. |
-| 402 | `insufficient_credits` | Credits ran out. Wait for next month's or move to a bigger size. |
+| 403 | `AUTH_REQUIRED`, `AUTH_EXPIRED` | Skool is not signed in or not enabled for agents, or it signed you out. Open the `browser_url` in the error, sign in to Skool in your Cloud Browser and enable it. |
+| 403 | `CAPTCHA_REQUIRED`, `MFA_REQUIRED` | Skool asked for a check only you can pass. Finish it in your Cloud Browser at the `browser_url`. |
+| 403 | `SCOPE_DENIED` | You enabled Skool read only. Switch it to read and write in your Cloud Browser. |
+| 402 | `INSUFFICIENT_CREDITS` | Credits ran out. Buy a credit pack in the dashboard. |
 | 429 | `rate_limited` | The client waits for `Retry-After` and retries by itself. |
 | 503 | `TARGET_BLOCKED` | Skool changed something; the endpoint is paused until it is fixed. Credits are refunded. |
 
@@ -234,7 +234,7 @@ curl -X POST https://cotlet.dev/api/v1/skool/list_members \
 No. Skool has no public API and no developer docs. The only official connection is the Zapier plugin on the Pro plan, which can send new paid members and Membership Questions answers out, invite a member and unlock a course. It cannot list all members, approve requests, post, comment, send DMs or read stats. Details and sources: [cotlet.dev/integrations/skool-api-mcp-server](https://cotlet.dev/integrations/skool-api-mcp-server).
 
 **Is this a Skool scraper?**
-It does what people usually want a scraper for (export members, posts and courses to CSV) but works differently: the scripts call a hosted API that acts in your own Skool account with your own session. There is no headless browser on your machine, no `auth_token` cookie to copy from DevTools and nothing to fix when Skool updates its site.
+It does what people usually want a scraper for (export members, posts and courses to CSV) but works differently: the scripts call a hosted API that acts in your own Skool account, signed in inside your own Cloud Browser. There is no headless browser on your machine, no `auth_token` cookie to copy from DevTools and nothing to fix when Skool updates its site.
 
 **Can I export Skool members to CSV?**
 Yes: `python export_members.py --group yourgroup --out members.csv`. You get every member with role, level, points, join date and profile URL, across all pages.
@@ -246,10 +246,10 @@ Only of groups your account belongs to, and only what Skool shows to your role. 
 No. Cotlet does not use the Zapier plugin. Approving requests needs an admin or moderator role and stats need an admin, the same as in the Skool admin panel.
 
 **Do I have to copy cookies or my Skool password into a config file?**
-No. You sign in to Skool once in your browser on the Cotlet connect page, with 2FA if you use it. Cotlet stores only the session, encrypted, and never your password. Your scripts only ever hold the Cotlet API key.
+No. You sign in to Skool once in your own Cotlet Cloud Browser, with 2FA if you use it, and enable it for agents. Password saving is off there, so Cotlet never saves your password. Your scripts only ever hold the Cotlet API key.
 
-**What happens when my Skool session expires?**
-The call returns `AUTH_EXPIRED` with a link. Open it, sign in to Skool again, and rerun the script.
+**What happens when Skool signs me out?**
+The call returns `AUTH_EXPIRED` with a link to your Cloud Browser, and you get an email. Sign in to Skool there again and rerun the script.
 
 **Can these scripts approve every pending membership request automatically?**
 Yes. `approve_membership_requests.py --all`, or `--match` with keywords from your Membership Questions. For a daily unattended run, switch confirmation off for `approve_membership_request` in the Cotlet dashboard and schedule the script with cron or GitHub Actions.
@@ -258,7 +258,7 @@ Yes. `approve_membership_requests.py --all`, or `--match` with keywords from you
 You can DM members one by one, for example a welcome message to new members with `welcome_new_members.py`. Messages go out under your name, wait for your OK by default, and calls are paced like a person, not blasted. Do not use it for spam: it breaks Skool's rules and Cotlet's [acceptable use policy](https://cotlet.dev/acceptable-use).
 
 **Will my Skool account get banned?**
-Calls are human-paced and use one isolated session per user. Nobody can promise a platform will never act, but Cotlet keeps the risk low and refuses abusive use. You stay responsible for following Skool's terms.
+Calls come from the same Cloud Browser and fixed IP you signed in with, at a human pace. Nobody can promise a platform will never act, but Cotlet keeps the risk low and refuses abusive use. You stay responsible for following Skool's terms.
 
 **Is this legal?**
 You automate your own Skool account with your own login, to do what you could do by hand. Cotlet is unofficial and not affiliated with Skool, does not solve CAPTCHAs or bypass MFA, and pauses an integration within 24 hours if the platform objects.
@@ -286,22 +286,17 @@ Email [contact@cotlet.dev](mailto:contact@cotlet.dev) with the `X-Request-Id` fr
 
 ## Pricing
 
-Free 7-day trial with 5,000 credits, no card needed. Then one plan for every app Cotlet supports, Skool included:
+Free 7-day trial with 2,000 credits, no card needed. Then pay as you go, no subscription: one-time credit packs from $29 for 5,000 credits, valid 12 months, for every app Cotlet supports, Skool included.
 
-| Size | Price | Credits / month |
-|---|---|---|
-| Solo | $29/mo | 3,000 |
-| Pro | $99/mo | 12,000 |
-| Agency | $299/mo | 40,000 |
-
-Each successful call uses credits for the work it takes; failed calls cost nothing. Each month's credits stay valid for 3 months. Nothing is charged until your access is active. [Full pricing](https://cotlet.dev/pricing).
+A successful call uses 20 to 30 credits (25 for most tools); failed calls cost nothing. Your Cloud Browser uses 50 credits a day while it has an app enabled for agents, however many apps that is. Nothing is charged without a purchase. [Full pricing](https://cotlet.dev/pricing).
 
 ## Security and your Skool account
 
-- **No password stored.** You sign in to Skool yourself; Cotlet keeps only the session, encrypted with AES-256 in an EU vault.
-- **Scoped access.** Connect Skool read-only, or read and write.
+- **No password saved.** You sign in to Skool yourself, in your own Cloud Browser in the EU, where password saving is off. Its profile is stored encrypted with AES-256-GCM.
+- **Every background request listed.** Cotlet sends the same requests your browser would, from its IP with its cookies, and lists each one in your Background activity.
+- **Scoped access.** Enable Skool for agents read only, or read and write.
 - **Your OK first.** Posts, comments, DMs and approvals wait for your confirmation unless you switch that off per tool.
-- **Revoke in one click.** Disconnect Skool in the dashboard and the session is deleted.
+- **Cut access in one click.** Disable Skool for agents, sign out of it in your Cloud Browser, or reset the browser.
 - **No data kept.** Results pass through to your script and are not stored.
 - **Never:** CAPTCHA solving, MFA bypass, spam.
 
