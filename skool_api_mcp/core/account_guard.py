@@ -26,7 +26,7 @@ def check_account_write(method: str, url: str) -> None:
     if method.upper() in _READS:
         return
     path = urlsplit(url).path.lower()
-    if _COMMON.search(path) or any(re.search(pattern, path) for pattern in app.ACCOUNT_PATHS):
+    if _COMMON.search(path) or any(re.search(pattern, path, re.IGNORECASE) for pattern in app.ACCOUNT_PATHS):
         raise ToolError(
             "This server never changes account settings in the app (password, email, sign-in, profile).",
             ErrorCode.SCOPE_DENIED,
