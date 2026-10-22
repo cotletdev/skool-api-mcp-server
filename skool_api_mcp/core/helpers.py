@@ -24,7 +24,7 @@ def limit(args: dict[str, Any], default: int, maximum: int) -> int:
 
 
 def json_field(value: Any) -> Any:
-    """Skool keeps some metadata as JSON strings: the parsed value, None when it does not parse."""
+    """Apps keep some metadata as JSON strings: the parsed value, None when it does not parse."""
     if isinstance(value, str) and value[:1] in "{[":
         try:
             return json.loads(value)

@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 ToolHandler = Callable[["ToolContext", dict[str, Any]], Awaitable[Any]]
 
-# The REST route under /api/v1/skool, e.g. "POST /groups/{group}/posts".
+# The REST route under app.API_PREFIX, e.g. "POST /groups/{group}/posts".
 ROUTE = re.compile(r"^(GET|POST|PUT|PATCH|DELETE) (/(?:[a-z0-9-]+|\{[a-z][a-z0-9_]*\}))+$")
 
 # The hosted service asks the owner to approve each call that reaches other people. Here your MCP client
@@ -50,7 +50,7 @@ class ToolSpec:
     example_response: dict[str, Any] | None = None
     needs_browser: bool = False
     timeout_s: int | None = None
-    # Read-only check of the input against Skool before a call that reaches people.
+    # Read-only check of the input against the app before a call that reaches people.
     check: ToolHandler | None = None
 
 

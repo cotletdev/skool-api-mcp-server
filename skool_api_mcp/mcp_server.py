@@ -1,4 +1,4 @@
-"""The MCP server: one MCP tool per Skool tool, over stdio or streamable HTTP."""
+"""The MCP server: one MCP tool per tool of the app, over stdio or streamable HTTP."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ from typing import Any
 import mcp.types as types
 from mcp.server.lowlevel import Server
 
-from skool_api_mcp import __version__
+from skool_api_mcp import __version__, app
 from skool_api_mcp.core.errors import ToolError
 from skool_api_mcp.runner import Runner, description, tools
 
 INSTRUCTIONS = (
-    "Skool tools working in the user's own Skool account, through the session of their Chrome. "
-    "Start with list_groups: its `group` values are what every other tool takes. "
-    "Tools that post, comment, message, invite or change a group act under the user's name and reach real "
+    f"{app.NAME} tools working in the user's own {app.NAME} account, through the session of their Chrome. "
+    f"{app.AGENT_START} "
+    "Tools that post, comment, message, invite or change settings act under the user's name and reach real "
     "people: say what you will send and get the user's OK first. Lists page with next_cursor."
 )
 
@@ -32,7 +32,7 @@ def _annotations(spec: Any) -> types.ToolAnnotations:
 
 
 def build(runner: Runner) -> Server:
-    server: Server = Server("skool", version=__version__, instructions=INSTRUCTIONS)
+    server: Server = Server(app.SLUG, version=__version__, instructions=INSTRUCTIONS)
 
     @server.list_tools()
     async def list_tools() -> list[types.Tool]:

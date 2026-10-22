@@ -1,13 +1,13 @@
-"""Your Skool session: the skool.com cookies of your own Chrome, saved on this machine.
+"""Your session of the app: its cookies from your own Chrome, saved on this machine.
 
-`skool-mcp connect` reads them from Chrome over the Chrome DevTools Protocol, in one of two ways:
+`<cli> connect` reads them from Chrome over the Chrome DevTools Protocol, in one of two ways:
 
 - Chrome 144+ with remote debugging switched on at chrome://inspect/#remote-debugging. Chrome writes
   the port to `DevToolsActivePort` in its profile folder and asks you to allow each connection.
 - Any Chrome started with `--remote-debugging-port=9222 --user-data-dir=<folder>`: pass `--cdp http://127.0.0.1:9222`.
 
 The session file holds cookies only, never your password, and is readable by your user alone (0600).
-Skool's `auth_token` cookie lasts about a year, so one connect is usually enough.
+Names, domains and the session cookie come from `app.py`.
 """
 
 from __future__ import annotations
@@ -23,15 +23,15 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from skool_api_mcp import app
 from skool_api_mcp.core.errors import ErrorCode, ToolError
 
-SKOOL_DOMAIN = "skool.com"
-SESSION_COOKIE = "auth_token"
+SESSION_COOKIE = app.SESSION_COOKIES[0]
 
 
 def home() -> Path:
-    """Where the session is kept: $SKOOL_MCP_HOME, or ~/.config/skool-api-mcp."""
-    return Path(os.environ.get("SKOOL_MCP_HOME") or Path.home() / ".config" / "skool-api-mcp")
+    """Where the session is kept: $<ENV>_MCP_HOME, or ~/.config/<slug>-api-mcp."""
+    return Path(os.environ.get(f"{app.ENV}_MCP_HOME") or Path.home() / ".config" / f"{app.SLUG}-api-mcp")
 
 
 def session_path() -> Path:
@@ -50,21 +50,21 @@ class Session:
 
     @property
     def signed_in(self) -> bool:
-        return any(c["name"] == SESSION_COOKIE and c.get("value") for c in self.cookies)
+        return all(any(c["name"] == name and c.get("value") for c in self.cookies) for name in app.SESSION_COOKIES)
 
 
 def load() -> Session:
-    """The saved session, with SKOOL_AUTH_TOKEN and SKOOL_PROXY from the environment on top."""
+    """The saved session, with <ENV>_AUTH_TOKEN and <ENV>_PROXY from the environment on top."""
     session = Session()
     path = session_path()
     if path.exists():
         data = json.loads(path.read_text(encoding="utf-8"))
         session = Session(**{k: v for k, v in data.items() if k in Session.__dataclass_fields__})
-    if token := os.environ.get("SKOOL_AUTH_TOKEN", "").strip():
+    if token := os.environ.get(f"{app.ENV}_AUTH_TOKEN", "").strip():
         session.cookies = [c for c in session.cookies if c["name"] != SESSION_COOKIE]
-        session.cookies.append({"name": SESSION_COOKIE, "value": token, "domain": f".{SKOOL_DOMAIN}", "path": "/"})
+        session.cookies.append({"name": SESSION_COOKIE, "value": token, "domain": app.COOKIE_DOMAIN, "path": "/"})
         session.source = session.source or "token"
-    if proxy := os.environ.get("SKOOL_PROXY", "").strip():
+    if proxy := os.environ.get(f"{app.ENV}_PROXY", "").strip():
         session.proxy = proxy
     return session
 
@@ -84,7 +84,7 @@ def from_token(token: str) -> Session:
     token = token.strip()
     if not token:
         raise ToolError("The token is empty.", ErrorCode.INVALID_INPUT)
-    cookie = {"name": SESSION_COOKIE, "value": token, "domain": f".{SKOOL_DOMAIN}", "path": "/"}
+    cookie = {"name": SESSION_COOKIE, "value": token, "domain": app.COOKIE_DOMAIN, "path": "/"}
     return Session(cookies=[cookie], source="token")
 
 
@@ -151,7 +151,7 @@ class _Cdp:
 
 
 def from_chrome(cdp: str | None = None, profile_dir: str | None = None) -> Session:
-    """Read the skool.com cookies of a running Chrome. Nothing is changed in the browser."""
+    """Read the app's cookies of a running Chrome. Nothing is changed in the browser."""
     url = _endpoint(cdp) if cdp else auto_endpoint(profile_dir)
     try:
         client = _Cdp(url)
@@ -166,22 +166,22 @@ def from_chrome(cdp: str | None = None, profile_dir: str | None = None) -> Sessi
         cookies = client.send("Storage.getCookies").get("cookies") or []
     finally:
         client.close()
-    skool = [
+    mine = [
         {"name": c["name"], "value": c["value"], "domain": c["domain"], "path": c.get("path") or "/"}
         for c in cookies
-        if c.get("domain", "").lstrip(".").endswith(SKOOL_DOMAIN)
+        if any(c.get("domain", "").lstrip(".").endswith(domain) for domain in app.DOMAINS)
     ]
     user_agent = version.get("userAgent")
     match = re.search(r"Chrome/(\d+)", user_agent or "") or re.search(r"/(\d+)\.", version.get("product", ""))
     session = Session(
-        cookies=skool,
+        cookies=mine,
         user_agent=user_agent,
         chrome_major=int(match.group(1)) if match else None,
         source=cdp or "auto",
     )
     if not session.signed_in:
         raise ToolError(
-            "This Chrome is not signed in to Skool. Sign in at https://www.skool.com/login, then run this again.",
+            f"This Chrome is not signed in to {app.NAME}. Sign in at {app.LOGIN_URL}, then run this again.",
             ErrorCode.AUTH_REQUIRED,
         )
     return session

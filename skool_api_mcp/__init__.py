@@ -1,4 +1,4 @@
-"""Self-hosted Skool API and MCP server. Personal use only, see LICENSE.
+"""Self-hosted API and MCP server for one app (see app.py). Personal use only, see LICENSE.
 
 From Python, without a server:
 
@@ -15,7 +15,7 @@ __version__ = "2.0.0"
 
 
 def call(tool: str, args: dict[str, Any] | None = None, **kwargs: Any) -> Any:
-    """Run one Skool tool with the saved session and return its answer. Raises ToolError on failure."""
+    """Run one tool with the saved session and return its answer. Raises ToolError on failure."""
     from skool_api_mcp.runner import Runner
 
     async def go() -> Any:

@@ -1,4 +1,4 @@
-"""All Skool tools in one registry, and the one way to call them: validate, run, map errors.
+"""All tools of the app in one registry, and the one way to call them: validate, run, map errors.
 
 The REST API, the MCP server, the CLI and `skool_api_mcp.call()` all go through `Runner.run`.
 """
@@ -12,6 +12,7 @@ from typing import Any
 
 import jsonschema
 
+from skool_api_mcp import app
 from skool_api_mcp import session as sessions
 from skool_api_mcp.core.context import ToolContext
 from skool_api_mcp.core.errors import ErrorCode, ToolError
@@ -22,7 +23,7 @@ _TOOLS: dict[str, ToolSpec] | None = None
 
 
 def all_tools() -> dict[str, ToolSpec]:
-    """Every tool in skool/tools, by name, in file order."""
+    """Every tool in the app's tools/ package, by name, in file order."""
     global _TOOLS
     if _TOOLS is None:
         found: dict[str, ToolSpec] = {}
@@ -45,7 +46,7 @@ def description(spec: ToolSpec) -> str:
 
 
 class Runner:
-    """One Skool session for the life of the process; reconnects to Chrome once when Skool signs it out."""
+    """One session for the life of the process; reconnects to Chrome once when the app signs it out."""
 
     def __init__(self, read_only: bool = False) -> None:
         self.read_only = read_only
@@ -57,7 +58,7 @@ class Runner:
             session = sessions.load()
             if not session.signed_in:
                 raise ToolError(
-                    "No Skool session yet. Sign in to Skool in Chrome, then run: skool-mcp connect",
+                    f"No {app.NAME} session yet. Sign in to {app.NAME} in Chrome, then run: {app.CLI} connect",
                     ErrorCode.AUTH_REQUIRED,
                 )
             self._ctx = ToolContext(session=session)
@@ -66,9 +67,9 @@ class Runner:
     async def run(self, name: str, args: dict[str, Any] | None = None) -> Any:
         spec = all_tools().get(name)
         if spec is None:
-            raise ToolError(f"No tool '{name}'. List them with: skool-mcp tools", ErrorCode.UNKNOWN_TOOL)
+            raise ToolError(f"No tool '{name}'. List them with: {app.CLI} tools", ErrorCode.UNKNOWN_TOOL)
         if self.read_only and spec.access != "read":
-            raise ToolError(f"{name} changes Skool and this server runs read-only.", ErrorCode.SCOPE_DENIED)
+            raise ToolError(f"{name} changes {app.NAME} and this server runs read-only.", ErrorCode.SCOPE_DENIED)
         args = {k: v for k, v in (args or {}).items() if v is not None}
         try:
             jsonschema.validate(args, spec.input_schema)
@@ -79,11 +80,11 @@ class Runner:
         try:
             return await asyncio.wait_for(spec.handler(ctx, args), timeout=spec.timeout_s or 120)
         except TimeoutError:
-            raise ToolError("Skool took too long to answer.", ErrorCode.TIMEOUT) from None
+            raise ToolError(f"{app.NAME} took too long to answer.", ErrorCode.TIMEOUT) from None
         except ToolError as exc:
             if exc.code is not ErrorCode.AUTH_EXPIRED or not await self._reconnect():
                 raise
-            # Skool signed the old cookies out: read them again from Chrome and try once more.
+            # The app signed the old cookies out: read them again from Chrome and try once more.
             return await spec.handler(self._context(), args)
 
     async def _reconnect(self) -> bool:

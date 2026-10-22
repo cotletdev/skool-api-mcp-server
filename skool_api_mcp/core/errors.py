@@ -10,14 +10,14 @@ from enum import StrEnum
 
 
 class ErrorCode(StrEnum):
-    # Skool has no session for this server yet, or signed it out: run `skool-mcp connect` again.
+    # No session for this server yet, or the app signed it out: run `<cli> connect` again.
     AUTH_REQUIRED = "auth_required"
     AUTH_EXPIRED = "auth_expired"
     CAPTCHA_REQUIRED = "captcha_required"
     MFA_REQUIRED = "mfa_required"
     # The tool changes something and the server runs with --read-only.
     SCOPE_DENIED = "scope_denied"
-    # The Skool account lacks the role (not a group admin, not the author).
+    # The account in the app lacks the role (not a group admin, not the author).
     APP_PERMISSION_DENIED = "app_permission_denied"
     TARGET_BLOCKED = "target_blocked"
     UNKNOWN_TOOL = "unknown_tool"

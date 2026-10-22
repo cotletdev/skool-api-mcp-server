@@ -1,12 +1,12 @@
 """The REST API and the MCP endpoint on one port.
 
-- `GET|POST|PUT|PATCH|DELETE /api/v1/skool/<route>`: each tool at its route, the same paths as the
+- `GET|POST|PUT|PATCH|DELETE <app.API_PREFIX>/<route>`: each tool at its route, the same paths as the
   hosted API at cotlet.dev. Path parts and the query string are arguments; a JSON body adds the rest.
-- `POST /api/v1/skool/tools/{name}`: any tool by name, the JSON body is its arguments.
-- `GET /api/v1/skool/tools`: every tool with its schema. OpenAPI at `/docs` and `/openapi.json`.
+- `POST <app.API_PREFIX>/tools/{name}`: any tool by name, the JSON body is its arguments.
+- `GET <app.API_PREFIX>/tools`: every tool with its schema. OpenAPI at `/docs` and `/openapi.json`.
 - `/mcp`: the MCP server over streamable HTTP.
 
-With SKOOL_MCP_TOKEN set, every request needs `Authorization: Bearer <token>`.
+With <ENV>_MCP_TOKEN set, every request needs `Authorization: Bearer <token>`.
 """
 
 from __future__ import annotations
@@ -23,12 +23,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 
-from skool_api_mcp import __version__, mcp_server
+from skool_api_mcp import __version__, app, mcp_server
 from skool_api_mcp.core.errors import HTTP_STATUS, ErrorCode, ToolError
 from skool_api_mcp.core.tools import ToolSpec
 from skool_api_mcp.runner import Runner, description, tools
 
-PREFIX = "/api/v1/skool"
+PREFIX = app.API_PREFIX
 ASGI = Callable[[dict[str, Any], Callable[[], Awaitable[Any]], Callable[[Any], Awaitable[None]]], Awaitable[None]]
 
 
@@ -120,7 +120,7 @@ async def _arguments(request: Request, spec: ToolSpec) -> dict[str, Any]:
 
 def create_app(runner: Runner) -> ASGI:
     manager = StreamableHTTPSessionManager(app=mcp_server.build(runner), json_response=True, stateless=True)
-    token = os.environ.get("SKOOL_MCP_TOKEN", "").strip()
+    token = os.environ.get(f"{app.ENV}_MCP_TOKEN", "").strip()
 
     @contextlib.asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -129,9 +129,9 @@ def create_app(runner: Runner) -> ASGI:
         await runner.close()
 
     api = FastAPI(
-        title="Skool API (self-hosted)",
+        title=f"{app.NAME} API (self-hosted)",
         version=__version__,
-        description="Your Skool account as a REST API, run on your machine with your Chrome's session.",
+        description=f"Your {app.NAME} account as a REST API, run on your machine with your Chrome's session.",
         lifespan=lifespan,
     )
 
@@ -195,13 +195,13 @@ def create_app(runner: Runner) -> ASGI:
             openapi_extra=_openapi(spec, method, path),
         )
 
-    async def app(
+    async def asgi(
         scope: dict[str, Any], receive: Callable[[], Awaitable[Any]], send: Callable[[Any], Awaitable[None]]
     ) -> None:
         if scope["type"] == "http" and token:
             sent = dict(scope.get("headers") or []).get(b"authorization", b"").decode()
             if not hmac.compare_digest(sent, f"Bearer {token}"):
-                await _error(ErrorCode.AUTH_REQUIRED, "Send Authorization: Bearer <SKOOL_MCP_TOKEN>.")(
+                await _error(ErrorCode.AUTH_REQUIRED, f"Send Authorization: Bearer <{app.ENV}_MCP_TOKEN>.")(
                     scope, receive, send
                 )
                 return
@@ -210,4 +210,4 @@ def create_app(runner: Runner) -> ASGI:
             return
         await api(scope, receive, send)
 
-    return app
+    return asgi
