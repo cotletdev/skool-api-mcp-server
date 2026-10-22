@@ -73,6 +73,8 @@ skool-mcp --version
 
 With [uv](https://docs.astral.sh/uv/): `uv venv && uv pip install -e .`, then `uv run skool-mcp ...`.
 
+Setting it up with an AI agent (Claude Code, Codex, Cursor)? Open it in this folder and ask it to set up the repo: [`AGENTS.md`](AGENTS.md) tells it every step, and it asks you only for the steps in Chrome.
+
 To update: `git pull && pip install -e .`. We copy every change of the hosted Skool tools into this repo.
 
 ## Connect your Chrome
