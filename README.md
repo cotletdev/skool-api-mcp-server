@@ -1,315 +1,494 @@
-# Skool API and MCP Server
+# Skool API and MCP server, self-hosted
 
-**Skool API** for Python scripts and a hosted **Skool MCP server** for Claude, ChatGPT, Cursor, Codex and n8n. Export Skool members to CSV, approve membership requests, export and publish posts, read and send Skool Chat DMs and pull members, churn and MRR stats from your own Skool community.
+A **Skool API** and a **Skool MCP server** you run on your own computer, in Python, on the session of your own Google Chrome. All 69 Skool tools we run in production at [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server): members, membership requests, posts, comments, polls, Classroom, Calendar, group settings, Skool Chat and stats.
 
-Skool has no public API and no official MCP server. This repo gives you both, on top of the **hosted Skool API by [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server)**: you sign in to Skool once in your own Cloud Browser (a Chrome Cotlet runs for you in the cloud), Cotlet keeps you signed in 24/7, and your AI agent (over MCP) or the Python scripts here (over the REST API) work in your account with one API key.
+Skool has no public API and no official MCP server. This repo gives you both:
 
-- **Skool MCP server:** `https://cotlet.dev/mcp/v1`, 15 Skool tools for your AI agent. [Setup](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex)
-- **Skool API:** `https://cotlet.dev/api/v1/skool/{endpoint}`, plus 16 ready Python scripts, one file per job, standard library only. [Scripts](#scripts)
+- **MCP server** for Claude Code, Claude Desktop, Cursor, Codex and any MCP client, over stdio or HTTP. [Setup](#mcp-server)
+- **REST API** on `http://127.0.0.1:8787/api/v1/skool`, with OpenAPI docs at `/docs`. [Setup](#rest-api)
+- **Python**: `call("list_members", group="yourgroup")`, plus 16 ready scripts in [`examples/`](examples/).
 
-[![Skool API docs](https://img.shields.io/badge/Skool%20API-docs-6d4aef)](https://cotlet.dev/docs/api/skool)
-[![Skool MCP server](https://img.shields.io/badge/Skool%20MCP%20server-cotlet.dev%2Fmcp%2Fv1-6d4aef)](https://cotlet.dev/docs/mcp)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-141318)](#requirements)
-[![No dependencies](https://img.shields.io/badge/dependencies-none-141318)](#requirements)
-[![License: MIT](https://img.shields.io/badge/license-MIT-141318)](LICENSE)
+It is for technical people who want to run it themselves, **for personal use only** ([license](#license)). If you want it running 24/7 on a server, kept working when Skool changes its site, for a team or a business, use the [hosted version at cotlet.dev](https://cotlet.dev/integrations/skool-api-mcp-server).
+
+[![Skool MCP server](https://img.shields.io/badge/Skool%20MCP-69%20tools-6d4aef)](#all-69-tools)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-141318)](#requirements)
+[![License: personal use](https://img.shields.io/badge/license-personal%20use-141318)](LICENSE)
 
 ```bash
-# Skool MCP server for your AI agent (Claude Code)
-claude mcp add --transport http cotlet https://cotlet.dev/mcp/v1 \
-  --header "Authorization: Bearer $COTLET_API_KEY"
-
-# Skool API from Python
 git clone https://github.com/cotletdev/skool-api-mcp-server.git && cd skool-api-mcp-server
-export COTLET_API_KEY=cotlet_...          # https://cotlet.dev/app/signup?app=skool
-python export_members.py --group yourgroup --out members.csv
+python3 -m venv .venv && . .venv/bin/activate && pip install -e .
+skool-mcp connect                                  # reads your Skool session from Chrome
+skool-mcp call list_groups
+claude mcp add skool -- "$PWD/.venv/bin/skool-mcp" mcp
 ```
 
 ## Contents
 
 - [How it works](#how-it-works)
-- [Quick start](#quick-start)
-- [Scripts](#scripts)
-- [Skool MCP server for Claude, ChatGPT, Cursor and Codex](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex)
-- [Run it on a schedule: cron, GitHub Actions, n8n, Make, Zapier](#run-it-on-a-schedule)
-- [Skool API endpoints](#skool-api-endpoints)
-- [FAQ](#faq)
-- [Pricing](#pricing)
+- [Requirements](#requirements)
+- [Install](#install)
+- [Connect your Chrome](#connect-your-chrome)
+- [MCP server](#mcp-server)
+- [REST API](#rest-api)
+- [Python and the example scripts](#python-and-the-example-scripts)
+- [All 69 tools](#all-69-tools)
+- [Configuration](#configuration)
 - [Security and your Skool account](#security-and-your-skool-account)
+- [Errors](#errors)
+- [Self-hosted or hosted](#self-hosted-or-hosted)
+- [FAQ](#faq)
+- [License](#license)
 
 ## How it works
 
 ```text
-your script / AI agent ──HTTPS──▶ Cotlet Skool API ──your Cloud Browser's IP and cookies──▶ skool.com (your account)
+AI agent (MCP) / script (REST, Python) ──▶ skool-mcp on your computer ──your Skool cookies──▶ skool.com
+                                                  ▲
+                         skool-mcp connect ───────┘ reads them once from your Chrome (DevTools Protocol)
 ```
 
-1. **Get an API key.** [Request access at cotlet.dev](https://cotlet.dev/app/signup?app=skool) with Skool selected. Each request is reviewed and the key arrives by email. Every account starts with a free 7-day trial and 2,000 credits, no card needed.
-2. **Sign in to Skool once.** In the Cotlet console, open your Cloud Browser, sign in to Skool there the way you always do, including 2FA, and press **Enable for agents** (read only or read and write). Password saving is off, so Cotlet never saves your password.
-3. **Run the scripts.** Each one is a plain `POST https://cotlet.dev/api/v1/skool/{endpoint}` with your key. When Skool changes its site, Cotlet fixes the integration; these scripts keep working unchanged.
+1. You sign in to Skool in your own Chrome, the way you always do.
+2. `skool-mcp connect` attaches to that Chrome through the Chrome DevTools Protocol, reads the skool.com cookies and saves them to `~/.config/skool-api-mcp/session.json`, readable by your user only. It never sees or stores your password.
+3. Every tool call is a request to Skool's own web app endpoints (`api2.skool.com` and the page data of `www.skool.com`) with those cookies, sent with [curl_cffi](https://github.com/lexiforest/curl_cffi), which copies Chrome's TLS fingerprint. No headless browser runs.
 
-Without a key, or before your access is active, the API answers `403` with a link to request access.
+Skool's session cookie lasts about a year. When Skool signs you out, the server reads the cookies from Chrome again, if Chrome is open with remote debugging on.
 
-## Quick start
+## Requirements
 
-### Requirements
+- Python 3.11 or newer.
+- Google Chrome 144 or newer, signed in to Skool. Any Chrome or Chromium works with a [debugging port](#option-b-a-chrome-with-a-debugging-port).
+- macOS, Linux or Windows.
+- The Skool role a tool needs: membership requests need admin or moderator, stats and group settings need admin. Reading members, posts, courses and chat works with any role in groups you belong to.
 
-- Python 3.9 or newer. No `pip install`: the scripts use only the standard library.
-- A Cotlet API key, with Skool enabled for agents in your Cloud Browser.
-- An admin or moderator role in the group for membership requests, and admin for stats and pinning. Members, posts, courses and DMs work with any role in groups you belong to.
-
-### Setup
+## Install
 
 ```bash
 git clone https://github.com/cotletdev/skool-api-mcp-server.git
 cd skool-api-mcp-server
-cp .env.example .env          # paste your key into .env, or:
-export COTLET_API_KEY=cotlet_...
+python3 -m venv .venv
+. .venv/bin/activate              # Windows: .venv\Scripts\activate
+pip install -e .
+skool-mcp --version
 ```
 
-### First calls
+With [uv](https://docs.astral.sh/uv/): `uv venv && uv pip install -e .`, then `uv run skool-mcp ...`.
+
+To update: `git pull && pip install -e .`. We copy every change of the hosted Skool tools into this repo.
+
+## Connect your Chrome
+
+### Option A: your everyday Chrome (recommended)
+
+1. Open `chrome://inspect/#remote-debugging` in Chrome and switch **remote debugging** on. Chrome then accepts DevTools connections from programs on this computer, and asks you before each one.
+2. Make sure you are signed in at [skool.com](https://www.skool.com).
+3. Run:
+
+   ```bash
+   skool-mcp connect
+   ```
+
+4. Chrome asks whether to allow the connection. Click **Allow**.
+
+```text
+Saved 15 skool.com cookies to /Users/you/.config/skool-api-mcp/session.json
+Signed in to Skool as Ana Lopez (ana-lopez-4127)
+```
+
+You can switch remote debugging off again afterwards. Leave it on if you want the server to pick up a new session by itself after Skool signs you out.
+
+`connect` looks for Chrome's `DevToolsActivePort` file in the default profile folder. For Chrome Beta, Canary or a custom profile folder, pass `--profile-dir "<folder>"`.
+
+### Option B: a Chrome with a debugging port
+
+Chrome does not open a debugging port on your default profile, so start a separate one, sign in to Skool there once, and connect to it:
 
 ```bash
-python list_groups.py                                   # your groups and the --group value of each
-python export_members.py --group yourgroup --out members.csv
-python list_membership_requests.py --group yourgroup
-python group_stats.py --group yourgroup --period 30d
+# macOS
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9222 --user-data-dir="$HOME/.chrome-skool"
+# Linux
+google-chrome --remote-debugging-port=9222 --user-data-dir="$HOME/.chrome-skool"
+# Windows
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%USERPROFILE%\.chrome-skool"
+
+skool-mcp connect --cdp http://127.0.0.1:9222
 ```
 
-`--group` is the URL name of the community: `yourgroup` for `skool.com/yourgroup`.
+`--cdp` also takes a `ws://` DevTools URL, for example of a Chrome on another machine reached over an SSH tunnel.
 
-## Scripts
+### Option C: paste the cookie by hand
 
-Every script prints JSON by default. Add `--out file.csv` or `--out file.json` to save it. Run any script with `--help` for all options.
-
-### Members and membership requests
-
-| Script | What it does |
-|---|---|
-| [`list_groups.py`](list_groups.py) | Lists every Skool group you belong to, with your role, member count and price. |
-| [`export_members.py`](export_members.py) | Exports members to CSV or JSON: name, role, level, points, join date, profile URL. Filter by `--role` or `--since`. Follows pagination for you. |
-| [`list_membership_requests.py`](list_membership_requests.py) | Pending requests to join, with each applicant's Membership Questions answers. |
-| [`approve_membership_requests.py`](approve_membership_requests.py) | Approves all pending requests, or only those whose answers contain your `--match` keywords. `--dry-run` shows who would get in. |
-| [`decline_membership_request.py`](decline_membership_request.py) | Declines one request. |
-| [`welcome_new_members.py`](welcome_new_members.py) | Sends everyone who joined in the last N days a personal welcome DM with your Start Here course link. |
-
-### Posts and comments
-
-| Script | What it does |
-|---|---|
-| [`export_posts.py`](export_posts.py) | Exports feed posts: title, author, category, likes, comment count, date. Filter by `--category` or `--since`. |
-| [`get_post.py`](get_post.py) | One post with its full body, attachments and the whole comment tree. |
-| [`unanswered_posts.py`](unanswered_posts.py) | Posts from the last N days with no comments yet. |
-| [`create_post.py`](create_post.py) | Publishes a post in a category, from `--body` or a Markdown file, and pins it with `--pin`. |
-| [`comment_on_post.py`](comment_on_post.py) | Comments on a post or replies under a comment. |
-| [`pin_post.py`](pin_post.py) | Pins or unpins a post on the feed or a Classroom page. |
-
-### Classroom, chat and stats
-
-| Script | What it does |
-|---|---|
-| [`list_courses.py`](list_courses.py) | Classroom courses with modules, unlock rule (open, level or paid) and URLs. |
-| [`unread_messages.py`](unread_messages.py) | Your unread Skool Chat conversations with the full thread. |
-| [`send_message.py`](send_message.py) | Sends a DM to one member. |
-| [`group_stats.py`](group_stats.py) | Total members, new joins, churn and MRR for 7, 30 or 90 days. |
-
-### Write your own
-
-[`cotlet_client.py`](cotlet_client.py) is 150 lines and has everything: auth, pagination, rate-limit retries, confirmations and CSV export.
-
-```python
-from cotlet_client import call, paginate
-
-for member in paginate("list_members", {"group": "yourgroup", "joined_since": "2026-10-01"}, "members"):
-    print(member["name"], member["level"])
-
-call("create_post", {"group": "yourgroup", "category": "Announcements",
-                     "title": "Live call tonight", "body": "8pm CET, link in the Calendar."})
-```
-
-### Confirmations for actions that reach people
-
-Approving, declining, posting, commenting and sending DMs go out under your name. By default each of these calls waits for your OK: the script prints a link, you approve it in the browser, and the script continues. For unattended runs (cron, GitHub Actions), switch confirmation off for the tools you choose in the Cotlet dashboard, for example only for `approve_membership_request`. Pinning runs without asking.
-
-## Skool MCP server for Claude, ChatGPT, Cursor and Codex
-
-The same Skool API is a hosted Skool MCP server, so your AI agent can do all of this in plain words. Nothing to install or run: one URL, same key. A ready config is in [`mcp.json`](mcp.json).
+For a server with no Chrome: in Chrome open DevTools on skool.com, **Application > Cookies > https://www.skool.com**, copy the value of `auth_token`, then:
 
 ```bash
-# Claude Code
-claude mcp add --transport http cotlet https://cotlet.dev/mcp/v1 \
-  --header "Authorization: Bearer $COTLET_API_KEY"
+skool-mcp connect --token          # paste it, input is hidden
+# or, without a session file:
+export SKOOL_AUTH_TOKEN=...
 ```
+
+A pasted token is not refreshed on its own. Paste a new one when Skool signs you out.
+
+Check the session at any time:
+
+```bash
+skool-mcp status
+```
+
+## MCP server
+
+The MCP server lists every tool with its input schema, a description written for agents, and hints: read tools are marked read-only, and tools that post, message or delete are marked so your client asks before running them.
+
+### Claude Code
+
+```bash
+claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp
+# read only:
+claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp --read-only
+```
+
+### Claude Desktop
+
+`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
-// Cursor: ~/.cursor/mcp.json
 {
   "mcpServers": {
-    "cotlet": {
-      "url": "https://cotlet.dev/mcp/v1",
-      "headers": { "Authorization": "Bearer ${env:COTLET_API_KEY}" }
+    "skool": {
+      "command": "/path/to/skool-api-mcp-server/.venv/bin/skool-mcp",
+      "args": ["mcp"]
     }
   }
 }
 ```
 
+### Cursor
+
+`~/.cursor/mcp.json`, the same block as Claude Desktop. A ready copy is in [`mcp.json`](mcp.json).
+
+### Codex
+
+`~/.codex/config.toml`:
+
 ```toml
-# Codex: ~/.codex/config.toml
-[mcp_servers.cotlet]
-url = "https://cotlet.dev/mcp/v1"
-bearer_token_env_var = "COTLET_API_KEY"
+[mcp_servers.skool]
+command = "/path/to/skool-api-mcp-server/.venv/bin/skool-mcp"
+args = ["mcp"]
 ```
 
-Claude Desktop and ChatGPT: add a custom connector with the URL `https://cotlet.dev/mcp/v1`. Setup for every client: [cotlet.dev/docs/mcp](https://cotlet.dev/docs/mcp).
+### Over HTTP
 
-Then ask:
+`skool-mcp serve` also serves MCP over streamable HTTP at `http://127.0.0.1:8787/mcp`, for clients that take a URL:
+
+```bash
+skool-mcp serve
+claude mcp add --transport http skool http://127.0.0.1:8787/mcp
+```
+
+Then ask your agent things like:
 
 > *Show me pending membership requests and approve the ones whose answers mention a business.*
 >
 > *Which posts from the last 7 days have no comments yet? Draft a reply for each.*
 >
-> *Send a welcome DM with the Start Here course link to everyone who joined this week.*
+> *Create a Calendar event for Thursday 6pm CET with the Zoom link and pin an announcement about it.*
 >
-> *Every Monday, tell me new members, churn and MRR for last week.*
+> *Tell me new members, churn and MRR for the last 30 days.*
 
-Tools show up as `skool_list_members`, `skool_approve_membership_request` and so on.
-
-## Run it on a schedule
-
-| Where | How |
-|---|---|
-| **cron** | `0 8 * * * cd ~/skool-api-mcp-server && python3 approve_membership_requests.py --group yourgroup --match business` |
-| **GitHub Actions** | Fork this repo, add the `COTLET_API_KEY` secret, set your group in [`.github/workflows/skool-daily.yml`](.github/workflows/skool-daily.yml) and uncomment the schedule. |
-| **n8n** | MCP Client node with `https://cotlet.dev/mcp/v1`, or an HTTP Request node: `POST https://cotlet.dev/api/v1/skool/{endpoint}` with `Authorization: Bearer <key>`. Trigger: Schedule. |
-| **Make** | HTTP module, same URL, header and JSON body. Scenario schedule. |
-| **Zapier** | Webhooks by Zapier (POST), same URL, header and body. Schedule by Zapier trigger. |
-| **Your AI agent** | A scheduled agent run, for example a Claude Code routine, with the MCP server above. |
-
-Cotlet runs in the cloud, so scheduled jobs keep working while your computer is off.
-
-## Skool API endpoints
-
-Base URL `https://cotlet.dev/api/v1/skool`. Every endpoint is a `POST` with a JSON body. Full parameters and example responses: [cotlet.dev/docs/api/skool](https://cotlet.dev/docs/api/skool).
-
-| Endpoint | Access | Description |
-|---|---|---|
-| `list_groups` | read | Skool groups you belong to, with your role and member count. |
-| `list_members` | read | Members with name, role, level and join date, newest first. |
-| `list_membership_requests` | read | Pending requests with Membership Questions answers. Admins and moderators. |
-| `list_posts` | read | Feed posts, newest first, with author, category, likes and comment count. |
-| `get_post` | read | Full post with body, attachments and comment tree. |
-| `list_courses` | read | Classroom courses with modules, unlock rule and URL. |
-| `list_conversations` | read | Skool Chat inbox: who, unread count, last message. |
-| `get_conversation` | read | Messages in one conversation, oldest first. |
-| `get_group_stats` | read | Total, new and churned members and MRR. Admins. |
-| `approve_membership_request` | write, confirm | Let an applicant in. Your AutoDM goes out as usual. |
-| `decline_membership_request` | write, confirm | Decline a request. |
-| `create_post` | write, confirm | Publish a post in a category, as you. |
-| `comment_on_post` | write, confirm | Comment or reply, as you. |
-| `send_message` | write, confirm | DM a member in Skool Chat. |
-| `pin_post` | write | Pin to the feed (up to 3) or a Classroom page (up to 12). Admins. |
-
-Raw call, any language:
+## REST API
 
 ```bash
-curl -X POST https://cotlet.dev/api/v1/skool/list_members \
-  -H "Authorization: Bearer $COTLET_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"group": "yourgroup", "limit": 100}'
+skool-mcp serve                    # http://127.0.0.1:8787, MCP at /mcp, docs at /docs
 ```
 
-### Errors
+Each tool has its own route under `/api/v1/skool`, the same paths as the hosted API at cotlet.dev, so code written against one works with the other. Path parts and the query string are arguments, and a JSON body adds the rest.
+
+```bash
+curl 'http://127.0.0.1:8787/api/v1/skool/groups'
+curl 'http://127.0.0.1:8787/api/v1/skool/groups/yourgroup/members?limit=30&role=admin'
+curl -X POST http://127.0.0.1:8787/api/v1/skool/groups/yourgroup/posts \
+  -H 'Content-Type: application/json' \
+  -d '{"title": "Live call tonight", "body": "8pm CET, link in the Calendar.", "category": "Announcements"}'
+```
+
+Any tool by name, body as its arguments:
+
+```bash
+curl -X POST http://127.0.0.1:8787/api/v1/skool/tools/list_members -d '{"group": "yourgroup"}'
+```
+
+- `GET /api/v1/skool/tools`: every tool with its route, input schema and an example answer.
+- `GET /docs`: interactive OpenAPI docs, `GET /openapi.json` the schema, for n8n, Postman or a generated client.
+- Answers are JSON. Lists return `next_cursor`; pass it back as `cursor` for the next page.
+
+The server listens on `127.0.0.1` only. To reach it from another device of yours, set a token, and every request then needs `Authorization: Bearer <token>`:
+
+```bash
+SKOOL_MCP_TOKEN=$(openssl rand -hex 24) skool-mcp serve --host 0.0.0.0
+```
+
+## Python and the example scripts
+
+Straight from Python, no server needed:
+
+```python
+from skool_api_mcp import call
+from skool_api_mcp.scripting import paginate, write_rows
+
+groups = call("list_groups")["groups"]
+members = list(paginate("list_members", {"group": "yourgroup", "joined_since": "2026-10-01"}, "members"))
+write_rows(members, "members.csv")
+call("create_post", group="yourgroup", category="Announcements", title="Week 12", body="Ship one landing page.")
+```
+
+Or one tool from the shell: `skool-mcp call list_posts group=yourgroup limit=10`, or with a JSON object.
+
+Ready scripts in [`examples/`](examples/). Each prints JSON, takes `--out file.csv` or `--out file.json` where it makes sense, and `--help`:
+
+| Script | What it does |
+|---|---|
+| [`list_groups.py`](examples/list_groups.py) | Your groups, with your role, member count and price. |
+| [`export_members.py`](examples/export_members.py) | Members to CSV or JSON: name, role, level, points, join date, profile URL. `--role`, `--since`. |
+| [`list_membership_requests.py`](examples/list_membership_requests.py) | Pending requests with each applicant's answers. |
+| [`approve_membership_requests.py`](examples/approve_membership_requests.py) | Approves all pending requests, or those whose answers match `--match` keywords. `--dry-run` first. |
+| [`decline_membership_request.py`](examples/decline_membership_request.py) | Declines one request. |
+| [`welcome_new_members.py`](examples/welcome_new_members.py) | A welcome DM with your Start Here course link to everyone who joined in the last N days. |
+| [`export_posts.py`](examples/export_posts.py) | Feed posts: title, author, category, likes, comments, date. `--category`, `--since`. |
+| [`get_post.py`](examples/get_post.py) | One post with its body and the whole comment tree. |
+| [`unanswered_posts.py`](examples/unanswered_posts.py) | Posts from the last N days with no comments yet. |
+| [`create_post.py`](examples/create_post.py) | Publishes a post from `--body` or a Markdown file, `--pin` pins it. |
+| [`comment_on_post.py`](examples/comment_on_post.py) | Comments on a post or replies under a comment. |
+| [`pin_post.py`](examples/pin_post.py) | Pins or unpins a post on the feed or a Classroom page. |
+| [`list_courses.py`](examples/list_courses.py) | Classroom courses with modules, unlock rule and URLs. |
+| [`unread_messages.py`](examples/unread_messages.py) | Unread Skool Chat conversations with the full thread. |
+| [`send_message.py`](examples/send_message.py) | A DM to one member. |
+| [`group_stats.py`](examples/group_stats.py) | Total members, new joins, churn and MRR for 7, 30 or 90 days. |
+
+```bash
+python examples/export_members.py --group yourgroup --out members.csv
+python examples/approve_membership_requests.py --group yourgroup --match business --dry-run
+```
+
+On a schedule, cron on your own computer works while it is on: `0 8 * * * cd ~/skool-api-mcp-server && .venv/bin/python examples/group_stats.py --group yourgroup`.
+
+## All 69 tools
+
+`group` is the URL name of a community: `yourgroup` for `skool.com/yourgroup`. `skool-mcp tools` prints this list, `skool-mcp tools --json` adds the input schemas.
+
+### Groups and search
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_groups` | read | `GET /groups` | Skool groups of your account, with your role (or pending), member count and price. |
+| `get_group` | read | `GET /groups/{group}` | A group's name, About text, privacy, price, counts, owner and membership questions. |
+| `get_group_stats` | read | `GET /groups/{group}/stats` | Total, new and churned members and monthly recurring revenue for a period. Admins only. |
+| `discover_groups` | read | `GET /groups/discover` | Search Skool's public directory of communities, with members, price and rating. |
+| `search_group` | read | `GET /groups/{group}/search` | Search a group's posts, members or courses, as its search box does. |
+
+### Posts
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_posts` | read | `GET /groups/{group}/posts` | Posts in a group's feed, pinned first, then newest, with author, category, likes and comment count. |
+| `get_post` | read | `GET /groups/{group}/posts/{post_id}` | One post with its full text and comments, replies nested under their comment. |
+| `create_post` | write | `POST /groups/{group}/posts` | Publish a post to the community feed in a category, as you. |
+| `update_post` | write | `PATCH /groups/{group}/posts/{post_id}` | Change the title, text or category of a post you wrote, or any post as an admin. |
+| `delete_post` | write | `DELETE /groups/{group}/posts/{post_id}` | Delete a post or a comment for good: yours, or anyone's as an admin. |
+
+### Comments, likes, polls and moderation
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `comment_on_post` | write | `POST /groups/{group}/posts/{post_id}/comments` | Comment on a post, or reply to a comment, as you. |
+| `like_post` | write | `PUT /groups/{group}/posts/{post_id}/like` | Like a post or a comment, or take the like back. |
+| `list_post_likes` | read | `GET /groups/{group}/posts/{post_id}/likes` | Who liked a post or a comment. |
+| `follow_post` | write | `PUT /groups/{group}/posts/{post_id}/follow` | Get notified of new comments on a post, or stop. |
+| `pin_post` | write | `PUT /groups/{group}/posts/{post_id}/pin` | Pin a post to the top of the feed (up to 3) or to a Classroom page (up to 12). Admins only. |
+| `pin_comment` | write | `PUT /groups/{group}/posts/{post_id}/comments/{comment_id}/pin` | Pin a comment to the top of a post's comments, or unpin it. |
+| `set_post_comments` | write | `PUT /groups/{group}/posts/{post_id}/commenting` | Turn comments on a post off, or back on. |
+| `vote_on_poll` | write | `PUT /groups/{group}/posts/{post_id}/poll/vote` | Vote in a post's poll, change your vote, or take it back. |
+| `get_poll_results` | read | `GET /groups/{group}/posts/{post_id}/poll` | Answers and vote counts of a post's poll, optionally with who voted for what. |
+| `list_reported_posts` | read | `GET /groups/{group}/posts/reported` | Posts members reported to the admins, waiting for review. Admins and moderators only. |
+
+### Members
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_members` | read | `GET /groups/{group}/members` | Members of a group with role, level, points and join date, newest first; also banned or churned. |
+| `search_members` | read | `GET /groups/{group}/members/search` | Find members of a group by name, as the @mention box does. |
+| `get_member` | read | `GET /groups/{group}/members/{member_id}` | One member's profile in a group: name, bio, role, level, points and when they were last online. |
+| `get_leaderboard` | read | `GET /groups/{group}/leaderboard` | The group's top 10 members by points for the last 7 days, 30 days or all time, and your rank. |
+| `invite_members` | write | `POST /groups/{group}/invitations` | Email people an invitation that lets them straight into the group. Admins only. |
+| `remove_member` | write | `DELETE /groups/{group}/memberships/{membership_id}` | Remove a member from the group, or lift a ban. Admins only. |
+| `ban_member` | write | `POST /groups/{group}/memberships/{membership_id}/ban` | Ban a member from the group, optionally deleting their recent posts. Admins only. |
+| `set_member_role` | write | `PUT /groups/{group}/memberships/{membership_id}/role` | Make a member an admin or moderator, or back to a member. Admins only. |
+
+### Membership requests
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_membership_requests` | read | `GET /groups/{group}/membership-requests` | Pending requests to join, with each applicant's Membership Questions answers. Admins and moderators only. |
+| `approve_membership_request` | write | `POST /groups/{group}/membership-requests/{request_id}/approve` | Let an applicant into the group. Your AutoDM, if set, goes out as usual. |
+| `decline_membership_request` | write | `POST /groups/{group}/membership-requests/{request_id}/decline` | Decline an applicant's request to join. |
+
+### Classroom
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_courses` | read | `GET /groups/{group}/courses` | Courses in the group's Classroom, open or locked for you, with the modules of open ones. |
+| `get_course` | read | `GET /groups/{group}/courses/{course_id}` | One course with its lessons and folders in Classroom order; get_lesson reads a lesson. |
+| `create_course` | write | `POST /groups/{group}/courses` | Add a course to the group's Classroom, as a draft or published. Admins only. |
+| `set_course_published` | write | `PUT /groups/{group}/courses/{course_id}/published` | Publish a draft course to members, or turn it back into a draft. Admins only. |
+| `get_lesson` | read | `GET /groups/{group}/courses/{course_id}/lessons/{lesson_id}` | One lesson's text and video link. |
+| `create_lesson` | write | `POST /groups/{group}/courses/{course_id}/lessons` | Add a lesson at the end of a course, with text and a video link. Admins only. |
+| `update_lesson` | write | `PATCH /groups/{group}/lessons/{lesson_id}` | Change a lesson's title, text or video link. Admins only. |
+| `mark_lesson_complete` | write | `PUT /groups/{group}/lessons/{lesson_id}/completion` | Mark a lesson done in your own course progress, or undo it. |
+
+### Calendar
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_events` | read | `GET /groups/{group}/events` | Events on a group's calendar in one month: title, time, place and who can join. |
+| `get_event` | read | `GET /groups/{group}/events/{event_id}` | One calendar event with its full description, place and access. |
+| `create_event` | write | `POST /groups/{group}/events` | Add an event to a group's calendar. Admins only. |
+| `update_event` | write | `PATCH /groups/{group}/events/{event_id}` | Change a calendar event's title, time, place or access. Admins only. |
+| `delete_event` | write | `DELETE /groups/{group}/events/{event_id}` | Delete a calendar event. Admins only. |
+
+### Group settings (admins)
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_categories` | read | `GET /groups/{group}/categories` | The feed categories of a group: name, who can post, sort order, post count. |
+| `create_category` | write | `POST /groups/{group}/categories` | Add a category to a group's feed. Admins only. |
+| `update_category` | write | `PATCH /groups/{group}/categories/{category_id}` | Rename a category or change who can post in it and how it sorts. Admins only. |
+| `delete_category` | write | `DELETE /groups/{group}/categories/{category_id}` | Delete a feed category and move its posts to another. Admins only. |
+| `list_group_rules` | read | `GET /groups/{group}/rules` | The rules of a group, numbered as the group shows them. |
+| `add_group_rule` | write | `POST /groups/{group}/rules` | Add a rule at the end of the group rules. Admins only. |
+| `update_group_rule` | write | `PATCH /groups/{group}/rules/{number}` | Change the title or text of a group rule. Admins only. |
+| `delete_group_rule` | write | `DELETE /groups/{group}/rules/{number}` | Delete a group rule. Admins only. |
+| `list_group_links` | read | `GET /groups/{group}/links` | The links on a group's sidebar, numbered as the group shows them. |
+| `add_group_link` | write | `POST /groups/{group}/links` | Add a link to the group's sidebar. Admins only. |
+| `update_group_link` | write | `PATCH /groups/{group}/links/{number}` | Change the text or address of a sidebar link. Admins only. |
+| `delete_group_link` | write | `DELETE /groups/{group}/links/{number}` | Remove a link from the group's sidebar. Admins only. |
+| `add_membership_question` | write | `POST /groups/{group}/membership-questions` | Add a question people answer when they ask to join the group. Admins only. |
+| `update_membership_question` | write | `PATCH /groups/{group}/membership-questions/{number}` | Change a membership question. Admins only. |
+| `delete_membership_question` | write | `DELETE /groups/{group}/membership-questions/{number}` | Remove a membership question. Admins only. |
+| `list_levels` | read | `GET /groups/{group}/levels` | The group's 9 levels with their custom titles and how many members reached each. |
+| `rename_level` | write | `PATCH /groups/{group}/levels/{level}` | Give one of the group's 9 levels its own title. Admins only. |
+| `update_group_about` | write | `PUT /groups/{group}/about` | Replace the text on the group's About page. Admins only. |
+| `get_auto_dm` | read | `GET /groups/{group}/auto-dm` | The welcome message Skool sends every new member, and whether it is on. Admins only. |
+| `set_auto_dm` | write | `PATCH /groups/{group}/auto-dm` | Change the welcome message new members get, or turn it on or off. Admins only. |
+
+### Chat and notifications
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_conversations` | read | `GET /conversations` | Your Skool Chat inbox: who, unread count and last message preview. |
+| `get_conversation` | read | `GET /conversations/{conversation_id}` | The latest messages of one Skool Chat conversation, oldest first. |
+| `send_message` | write | `POST /members/{member_id}/messages` | Send a direct message in Skool Chat to a member, starting a conversation if needed. |
+| `list_notifications` | read | `GET /notifications` | Your Skool notifications: new posts, comments, mentions, likes and approvals, newest first. |
+| `mark_notifications_read` | write | `POST /notifications/read` | Mark all your notifications read, everywhere or in one group. |
+
+Never built, on purpose: your Skool sign-in, email, password, name and profile settings, and anything that moves money (plans, payments, payouts, billing). Every request passes a guard that refuses those Skool paths.
+
+## Configuration
+
+| Variable | Default | What it does |
+|---|---|---|
+| `SKOOL_MCP_HOME` | `~/.config/skool-api-mcp` | Folder of `session.json`. |
+| `SKOOL_AUTH_TOKEN` | | Skool `auth_token` cookie, instead of `skool-mcp connect`. |
+| `SKOOL_PROXY` | | Proxy for every request to Skool, e.g. `http://user:pass@host:port`. |
+| `SKOOL_MCP_READ_ONLY` | | `1` hides and refuses every tool that changes Skool (same as `--read-only`). |
+| `SKOOL_MCP_TOKEN` | | Bearer token required by `serve`; needed to listen beyond `127.0.0.1`. |
+| `SKOOL_MCP_HOST`, `SKOOL_MCP_PORT` | `127.0.0.1`, `8787` | Address of `serve`. |
+
+## Security and your Skool account
+
+- **Your password never reaches this code.** Only cookies are read, and only those of skool.com.
+- **The session file is yours.** `session.json` is created with mode 0600. Anyone who has it can act as you on Skool, so keep it out of git and shared folders.
+- **Local by default.** `serve` binds to `127.0.0.1` and refuses another address without `SKOOL_MCP_TOKEN`.
+- **skool.com only.** Requests and redirects outside skool.com are refused.
+- **Read-only mode.** `--read-only` or `SKOOL_MCP_READ_ONLY=1` exposes the 28 read tools only.
+- **Actions reach real people.** Posts, comments, DMs, invitations and approvals go out under your name. MCP clients ask before running them; a script does not, so try it on a test group first.
+- **Do not spam.** Mass DMs or invitations break Skool's rules and can get your account limited. You are responsible for what runs in your account.
+
+## Errors
+
+The REST API answers `{"error": "<code>", "message": "..."}`. The MCP server returns the same code and message as a tool error.
 
 | Status | Code | What to do |
 |---|---|---|
-| 403 | `api_key_required`, `access_not_granted` | Set `COTLET_API_KEY`, or [request access to Skool](https://cotlet.dev/app/signup?app=skool). |
-| 403 | `AUTH_REQUIRED`, `AUTH_EXPIRED` | Skool is not signed in or not enabled for agents, or it signed you out. Open the `browser_url` in the error, sign in to Skool in your Cloud Browser and enable it. |
-| 403 | `CAPTCHA_REQUIRED`, `MFA_REQUIRED` | Skool asked for a check only you can pass. Finish it in your Cloud Browser at the `browser_url`. |
-| 403 | `SCOPE_DENIED` | You enabled Skool read only. Switch it to read and write in your Cloud Browser. |
-| 402 | `INSUFFICIENT_CREDITS` | Credits ran out. Buy a credit pack in the dashboard. |
-| 429 | `rate_limited` | The client waits for `Retry-After` and retries by itself. |
-| 503 | `TARGET_BLOCKED` | Skool changed something; the endpoint is paused until it is fixed. Credits are refunded. |
+| 401 | `auth_required`, `auth_expired` | No session, or Skool signed you out. Sign in to Skool in Chrome and run `skool-mcp connect`. |
+| 403 | `app_permission_denied` | Your Skool role cannot do this, e.g. stats as a member. |
+| 403 | `scope_denied` | The server runs read-only. |
+| 403 | `target_blocked` | Skool refused the request or showed a bot check. Open skool.com in Chrome once, then retry. |
+| 409 | `captcha_required` | Skool asks for a CAPTCHA. Solve it in Chrome. |
+| 422 | `invalid_input` | An argument is missing or wrong; the message names it. |
+| 429 | `rate_limited` | Skool is limiting the account. Wait a few minutes. |
+| 502 | `target_error` | Skool answered with an error, or changed its site. `git pull` for the latest tools, or [open an issue](https://github.com/cotletdev/skool-api-mcp-server/issues). |
+
+## Self-hosted or hosted
+
+| | This repo | [Cotlet, hosted](https://cotlet.dev/integrations/skool-api-mcp-server) |
+|---|---|---|
+| Tools | the same 69 | the same 69 |
+| Runs | on your computer, while it is on | in the cloud, 24/7 |
+| Skool session | your Chrome, cookies in a local file | your own Cloud Browser in the EU, profile encrypted with AES-256-GCM |
+| When Skool changes its site | `git pull` once we have fixed it | fixed for you, every tool tested daily |
+| Approvals | your MCP client asks per call | posts, DMs and approvals wait for your OK, switchable per tool |
+| Works with | MCP clients on your machine, local scripts | Claude.ai and ChatGPT connectors, n8n, Make, Zapier, any HTTP client |
+| Who may use it | you, for personal use | teams, businesses, agencies |
+| Price | free | free 7-day trial with 2,000 credits, no card; then one-time packs from $29 for 5,000 credits |
+
+On the hosted version a successful call uses 20 to 30 credits (25 for most tools), failed calls are free, and the Cloud Browser uses 50 credits a day while it has an app enabled for agents. [Full pricing](https://cotlet.dev/pricing).
 
 ## FAQ
 
 **Does Skool have an official API?**
-No. Skool has no public API and no developer docs. The only official connection is the Zapier plugin on the Pro plan, which can send new paid members and Membership Questions answers out, invite a member and unlock a course. It cannot list all members, approve requests, post, comment, send DMs or read stats. Details and sources: [cotlet.dev/integrations/skool-api-mcp-server](https://cotlet.dev/integrations/skool-api-mcp-server).
+No. Skool has no public API and no developer docs. The only official connection is the Zapier plugin on the Pro plan, which sends new paid members and Membership Questions answers out, invites a member and unlocks a course. It cannot list all members, approve requests, post, comment, send DMs or read stats. Details: [cotlet.dev/integrations/skool-api-mcp-server](https://cotlet.dev/integrations/skool-api-mcp-server).
+
+**Is there a Skool MCP server for Claude, ChatGPT or Cursor?**
+Yes, this one runs on your machine: `skool-mcp mcp` for Claude Code, Claude Desktop, Cursor and Codex. ChatGPT and Claude.ai connectors need a public HTTPS URL, which the [hosted Skool MCP server](https://cotlet.dev/integrations/skool-api-mcp-server) gives you.
 
 **Is this a Skool scraper?**
-It does what people usually want a scraper for (export members, posts and courses to CSV) but works differently: the scripts call a hosted API that acts in your own Skool account, signed in inside your own Cloud Browser. There is no headless browser on your machine, no `auth_token` cookie to copy from DevTools and nothing to fix when Skool updates its site.
+It does what people want a scraper for (export members, posts and courses to CSV) but does not parse HTML in a headless browser. It calls the same JSON endpoints the Skool web app calls, in your own account.
 
 **Can I export Skool members to CSV?**
-Yes: `python export_members.py --group yourgroup --out members.csv`. You get every member with role, level, points, join date and profile URL, across all pages.
+Yes: `python examples/export_members.py --group yourgroup --out members.csv`. Every member with role, level, points, join date and profile URL, across all pages.
 
 **Can I export members of a community I don't own?**
-Only of groups your account belongs to, and only what Skool shows to your role. The scripts act as you; they do not reach data you could not see in the browser.
+Only of groups your account belongs to, and only what Skool shows to your role.
 
 **Do I need Skool's Pro plan or Zapier?**
-No. Cotlet does not use the Zapier plugin. Approving requests needs an admin or moderator role and stats need an admin, the same as in the Skool admin panel.
+No. A few Skool features are Pro only, for example some member roles; the tool says so when Skool refuses.
 
-**Do I have to copy cookies or my Skool password into a config file?**
-No. You sign in to Skool once in your own Cotlet Cloud Browser, with 2FA if you use it, and enable it for agents. Password saving is off there, so Cotlet never saves your password. Your scripts only ever hold the Cotlet API key.
+**Why does it need my Chrome?**
+To read your Skool session without your password. Chrome is used once per sign-in, not for each call.
 
 **What happens when Skool signs me out?**
-The call returns `AUTH_EXPIRED` with a link to your Cloud Browser, and you get an email. Sign in to Skool there again and rerun the script.
+Calls fail with `auth_expired`. With Chrome remote debugging on, the server reads the new cookies on the next call (click Allow when Chrome asks); otherwise run `skool-mcp connect` again.
 
-**Can these scripts approve every pending membership request automatically?**
-Yes. `approve_membership_requests.py --all`, or `--match` with keywords from your Membership Questions. For a daily unattended run, switch confirmation off for `approve_membership_request` in the Cotlet dashboard and schedule the script with cron or GitHub Actions.
-
-**Can I send DMs to all my Skool members?**
-You can DM members one by one, for example a welcome message to new members with `welcome_new_members.py`. Messages go out under your name, wait for your OK by default, and calls are paced like a person, not blasted. Do not use it for spam: it breaks Skool's rules and Cotlet's [acceptable use policy](https://cotlet.dev/acceptable-use).
+**Can it run on a VPS or in Docker?**
+Technically yes, with `SKOOL_AUTH_TOKEN`. Skool then sees your session from a datacenter IP, which looks less like you, and the license allows it only on a server you alone use. For an always-on setup the hosted version keeps your session in your own Cloud Browser on a fixed IP.
 
 **Will my Skool account get banned?**
-Calls come from the same Cloud Browser and fixed IP you signed in with, at a human pace. Nobody can promise a platform will never act, but Cotlet keeps the risk low and refuses abusive use. You stay responsible for following Skool's terms.
+Requests carry Chrome's fingerprint and go out one at a time, as you would click. Nobody can promise a platform never acts. Keep to your normal use and do not send bulk DMs.
 
-**Is this legal?**
-You automate your own Skool account with your own login, to do what you could do by hand. Cotlet is unofficial and not affiliated with Skool, does not solve CAPTCHAs or bypass MFA, and pauses an integration within 24 hours if the platform objects.
+**Can I use it at work or for my clients?**
+No, the license is for personal use by one person. For a team, a company or client work, use [Cotlet](https://cotlet.dev) or write to [contact@cotlet.dev](mailto:contact@cotlet.dev).
 
-**What about free members and free trials?**
-`list_members` returns every member of the group, paid or free, unlike Skool's Zapier triggers, which fire only for paid members.
+**Is it open source?**
+The source is public, the license is not an open source license: personal use only, no business use, no hosting for others.
 
-**Can I use it with n8n, Make or Zapier?**
-Yes. Use the MCP Client node in n8n, or an HTTP request in any of them: `POST https://cotlet.dev/api/v1/skool/{endpoint}` with your key. See [Run it on a schedule](#run-it-on-a-schedule).
+**A tool broke or I need another one.**
+[Open an issue](https://github.com/cotletdev/skool-api-mcp-server/issues) with the tool name and the error message.
 
-**Is there a Skool MCP server? Can I use it with Claude, ChatGPT or Cursor?**
-Yes. Add the hosted Skool MCP server `https://cotlet.dev/mcp/v1`. See [Skool MCP server setup](#skool-mcp-server-for-claude-chatgpt-cursor-and-codex).
+## License
 
-**How is this different from open-source Skool MCP servers or Apify actors?**
-Open-source Skool MCP servers run on your computer with your session cookie in a local file, and stop working when Skool changes until someone fixes them. Apify actors bill per run on Apify. Cotlet is hosted, tested daily, keeps your session in an encrypted EU vault, gives you both a REST API and an MCP server with one key, and refunds credits for failed calls. If you would rather run and fix your own code, an open-source server may suit you better.
+[Cotlet Personal Use License 1.0](LICENSE). In short:
 
-**What does it cost?**
-See [Pricing](#pricing). Failed calls are free.
+- **Allowed:** one person, on their own computers, with their own Skool accounts, for their own purposes. Changing the code for yourself, and a GitHub fork under the same license.
+- **Not allowed:** any use in or for a company or organization, your own business included; letting other people use your instance (shared server, team machine, cloud service); selling or offering it or a service built on it.
 
-**Which Python version?**
-3.9 or newer. No dependencies.
-
-**My Skool community is not working / I need another endpoint.**
-Email [contact@cotlet.dev](mailto:contact@cotlet.dev) with the `X-Request-Id` from the error, or [open an issue](https://github.com/cotletdev/skool-api-mcp-server/issues).
-
-## Pricing
-
-Free 7-day trial with 2,000 credits, no card needed. Then pay as you go, no subscription: one-time credit packs from $29 for 5,000 credits, valid 12 months, for every app Cotlet supports, Skool included.
-
-A successful call uses 20 to 30 credits (25 for most tools); failed calls cost nothing. Your Cloud Browser uses 50 credits a day while it has an app enabled for agents, however many apps that is. Nothing is charged without a purchase. [Full pricing](https://cotlet.dev/pricing).
-
-## Security and your Skool account
-
-- **No password saved.** You sign in to Skool yourself, in your own Cloud Browser in the EU, where password saving is off. Its profile is stored encrypted with AES-256-GCM.
-- **Every background request listed.** Cotlet sends the same requests your browser would, from its IP with its cookies, and lists each one in your Background activity.
-- **Scoped access.** Enable Skool for agents read only, or read and write.
-- **Your OK first.** Posts, comments, DMs and approvals wait for your confirmation unless you switch that off per tool.
-- **Cut access in one click.** Disable Skool for agents, sign out of it in your Cloud Browser, or reset the browser.
-- **No data kept.** Results pass through to your script and are not stored.
-- **Never:** CAPTCHA solving, MFA bypass, spam.
-
-More: [cotlet.dev/security](https://cotlet.dev/security).
-
-## Links
-
-- Skool API and MCP server: [cotlet.dev/integrations/skool-api-mcp-server](https://cotlet.dev/integrations/skool-api-mcp-server)
-- Skool API reference: [cotlet.dev/docs/api/skool](https://cotlet.dev/docs/api/skool)
-- Skool use cases: [auto-approve membership requests](https://cotlet.dev/integrations/skool-api-mcp-server/auto-approve-membership-requests), [weekly posts](https://cotlet.dev/integrations/skool-api-mcp-server/schedule-weekly-posts), [reply to unanswered posts](https://cotlet.dev/integrations/skool-api-mcp-server/reply-to-unanswered-posts), [answer Skool Chat](https://cotlet.dev/integrations/skool-api-mcp-server/answer-skool-chat-messages), [welcome new members](https://cotlet.dev/integrations/skool-api-mcp-server/welcome-new-members), [MRR and churn report](https://cotlet.dev/integrations/skool-api-mcp-server/weekly-mrr-churn-report)
-- All apps without an API on Cotlet: [cotlet.dev/integrations](https://cotlet.dev/integrations)
-- About Cotlet: [github.com/cotletdev/cotlet](https://github.com/cotletdev/cotlet)
-- Cotlet on X: [@cotletdev](https://x.com/cotletdev)
+Versions up to 1.x of this repo (the scripts for the hosted API) stay MIT.
 
 ---
 
@@ -322,4 +501,4 @@ More: [cotlet.dev/security](https://cotlet.dev/security).
   </a>
 </p>
 
-Maintained by [Cotlet](https://cotlet.dev). Skool is a trademark of its owner. This project is unofficial and not affiliated with, endorsed or sponsored by Skool. Scripts are MIT licensed; using the hosted API requires a Cotlet account and is subject to the [Cotlet terms](https://cotlet.dev/terms).
+Maintained by [Cotlet](https://cotlet.dev) ([@cotletdev](https://x.com/cotletdev)). Skool is a trademark of its owner. This project is unofficial and not affiliated with, endorsed or sponsored by Skool.

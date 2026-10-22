@@ -1,8 +1,10 @@
 .env
+session.json
 __pycache__/
 *.pyc
 .venv/
+*.egg-info/
+dist/
 *.csv
 *.json
-!.github/**/*.json
 !mcp.json

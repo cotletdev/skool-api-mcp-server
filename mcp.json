@@ -1,9 +1,8 @@
 {
   "mcpServers": {
-    "cotlet": {
-      "type": "http",
-      "url": "https://cotlet.dev/mcp/v1",
-      "headers": { "Authorization": "Bearer ${COTLET_API_KEY}" }
+    "skool": {
+      "command": "/path/to/skool-api-mcp-server/.venv/bin/skool-mcp",
+      "args": ["mcp"]
     }
   }
 }

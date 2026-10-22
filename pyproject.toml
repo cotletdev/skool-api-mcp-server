@@ -1,0 +1,36 @@
+[project]
+name = "skool-api-mcp"
+version = "2.0.0"
+description = "Self-hosted Skool API and MCP server on your own Chrome session. Personal use only."
+readme = "README.md"
+license = { file = "LICENSE" }
+classifiers = ["License :: Other/Proprietary License", "Programming Language :: Python :: 3", "Topic :: Communications"]
+requires-python = ">=3.11"
+authors = [{ name = "Cotlet", email = "contact@cotlet.dev" }]
+keywords = ["skool", "skool api", "skool mcp", "mcp server", "claude", "chatgpt", "cursor"]
+dependencies = [
+    "curl_cffi>=0.13,<0.17",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "mcp>=1.12,<2",
+    "jsonschema>=4.20",
+    "websockets>=13",
+]
+
+[project.urls]
+Homepage = "https://cotlet.dev/integrations/skool-api-mcp-server"
+Source = "https://github.com/cotletdev/skool-api-mcp-server"
+
+[project.scripts]
+skool-mcp = "skool_api_mcp.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["skool_api_mcp"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
