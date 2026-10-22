@@ -15,6 +15,7 @@ from urllib.parse import urljoin, urlsplit
 from curl_cffi.requests import AsyncSession, BrowserType
 
 from skool_api_mcp import app
+from skool_api_mcp.core.account_guard import check_account_write
 from skool_api_mcp.core.errors import AuthExpiredError, CaptchaRequiredError, ErrorCode, ToolError
 from skool_api_mcp.session import Session
 
@@ -61,6 +62,11 @@ def _raise_for(response: HttpResponse) -> None:
     if response.status == 429:
         raise ToolError(f"{app.NAME} is rate limiting this account. Try again later.", ErrorCode.RATE_LIMITED)
     head = response.text[:20000]
+    if response.status in (401, 403) and any(marker in head for marker in app.RELOGIN_MARKERS):
+        raise AuthExpiredError(
+            f"{app.NAME} asks you to sign in again before this action. Sign out and in again at "
+            f"{app.LOGIN_URL} in Chrome, then run: {app.CLI} connect"
+        )
     if response.status in (200, 403) and any(marker in head for marker in _CAPTCHA_MARKERS):
         raise CaptchaRequiredError(
             f"{app.NAME} asks for a CAPTCHA. Open {app.DOMAINS[0]} in Chrome, finish it, then try again."
@@ -98,9 +104,13 @@ class ToolContext:
         return self._http
 
     async def call(self, method: str, url: str, **kwargs: Any) -> HttpResponse:
-        """One request to the app with your cookies. A signed-out answer raises auth_expired."""
+        """One request to the app with your cookies. A signed-out answer raises auth_expired.
+
+        Writes to your account settings in the app are refused before they leave (account_guard).
+        """
         if not allowed_host(url):
             raise ToolError(f"Request outside {app.DOMAINS[0]}.", ErrorCode.INTERNAL_ERROR)
+        check_account_write(method, url)
         client = self._client()
         method = method.upper()
         params, json, data, headers = (

@@ -18,6 +18,11 @@ COOKIE_DOMAIN = ".skool.com"
 LOGIN_URL = "https://www.skool.com/login"
 # A final URL with one of these means the app signed the session out.
 LOGGED_OUT_MARKERS = ("/login",)
+# An answer with one of these asks you to sign in again before a sensitive action. Skool has none.
+RELOGIN_MARKERS: tuple[str, ...] = ()
+# Paths of your Skool account that tools may read but never write. Common password, email and sign-in
+# paths are refused for every app (core/account_guard.py); Skool adds none.
+ACCOUNT_PATHS: tuple[str, ...] = ()
 # REST routes live under this path, the same as on cotlet.dev.
 API_PREFIX = "/api/v1/skool"
 # Prepended to the MCP server's instructions: where an agent starts.

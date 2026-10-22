@@ -23,7 +23,7 @@ from urllib.parse import urlsplit
 from skool_api_mcp import __version__, app
 from skool_api_mcp import session as sessions
 from skool_api_mcp.core.errors import ToolError
-from skool_api_mcp.runner import Runner, tools
+from skool_api_mcp.runner import Runner, all_tools, tools
 
 
 def _connect(args: argparse.Namespace) -> None:
@@ -76,14 +76,20 @@ def _tools(args: argparse.Namespace) -> None:
         print(f"{spec.name:<30} {spec.access:<5} {spec.route:<62} {spec.description}")
 
 
-def _parse_args(pairs: list[str]) -> dict[str, Any]:
+def _parse_args(tool: str, pairs: list[str]) -> dict[str, Any]:
+    """key=value pairs; a value is JSON unless the tool's schema wants a string (IDs like 148213977)."""
     if len(pairs) == 1 and pairs[0].lstrip().startswith("{"):
         return json.loads(pairs[0])
+    spec = all_tools().get(tool)
+    properties = spec.input_schema.get("properties", {}) if spec else {}
     out: dict[str, Any] = {}
     for pair in pairs:
         key, sep, value = pair.partition("=")
         if not sep:
             sys.exit(f"Arguments are key=value or one JSON object, got {pair!r}")
+        if properties.get(key, {}).get("type") == "string":
+            out[key] = value
+            continue
         try:
             out[key] = json.loads(value)
         except ValueError:
@@ -96,7 +102,7 @@ def _call(args: argparse.Namespace) -> None:
 
     async def go() -> Any:
         try:
-            return await runner.run(args.tool, _parse_args(args.arguments))
+            return await runner.run(args.tool, _parse_args(args.tool, args.arguments))
         finally:
             await runner.close()
 
