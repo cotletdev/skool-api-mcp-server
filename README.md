@@ -16,11 +16,10 @@ It is for technical people who want to run it themselves, **for noncommercial us
 [![MCP Badge](https://lobehub.com/badge/mcp/cotletdev-skool-api-mcp-server)](https://lobehub.com/mcp/cotletdev-skool-api-mcp-server)
 
 ```bash
-git clone https://github.com/cotletdev/skool-api-mcp-server.git && cd skool-api-mcp-server
-python3 -m venv .venv && . .venv/bin/activate && pip install -e .
+uv tool install skool-api-mcp                  # or: pip install skool-api-mcp
 skool-mcp connect                                  # reads your Skool session from Chrome
 skool-mcp call list_groups
-claude mcp add skool -- "$PWD/.venv/bin/skool-mcp" mcp
+claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp
 ```
 
 ## Contents
@@ -63,6 +62,17 @@ Skool's session cookie lasts about a year. When Skool signs you out, the server 
 
 ## Install
 
+From [PyPI](https://pypi.org/project/skool-api-mcp/):
+
+```bash
+uv tool install skool-api-mcp       # or: pipx install skool-api-mcp, or: pip install skool-api-mcp
+skool-mcp --version
+```
+
+MCP clients can also run it with no install: `uvx --from skool-api-mcp skool-mcp mcp`.
+
+From source:
+
 ```bash
 git clone https://github.com/cotletdev/skool-api-mcp-server.git
 cd skool-api-mcp-server
@@ -76,7 +86,7 @@ With [uv](https://docs.astral.sh/uv/): `uv venv && uv pip install -e .`, then `u
 
 Setting it up with an AI agent (Claude Code, Codex, Cursor)? Open it in this folder and ask it to set up the repo: [`AGENTS.md`](AGENTS.md) tells it every step, and it asks you only for the steps in Chrome.
 
-To update: `git pull && pip install -e .`. We copy every change of the hosted Skool tools into this repo.
+To update: `uv tool upgrade skool-api-mcp` (or `pip install -U skool-api-mcp`), from source `git pull && pip install -e .`. We copy every change of the hosted Skool tools into this repo.
 
 ## Connect your Chrome
 
@@ -143,9 +153,9 @@ The MCP server lists every tool with its input schema, a description written for
 ### Claude Code
 
 ```bash
-claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp
+claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp
 # read only:
-claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp --read-only
+claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp --read-only
 ```
 
 ### Claude Desktop
@@ -156,8 +166,8 @@ claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp --
 {
   "mcpServers": {
     "skool": {
-      "command": "/path/to/skool-api-mcp-server/.venv/bin/skool-mcp",
-      "args": ["mcp"]
+      "command": "uvx",
+      "args": ["--from", "skool-api-mcp", "skool-mcp", "mcp"]
     }
   }
 }
@@ -173,8 +183,8 @@ claude mcp add skool -- /path/to/skool-api-mcp-server/.venv/bin/skool-mcp mcp --
 
 ```toml
 [mcp_servers.skool]
-command = "/path/to/skool-api-mcp-server/.venv/bin/skool-mcp"
-args = ["mcp"]
+command = "uvx"
+args = ["--from", "skool-api-mcp", "skool-mcp", "mcp"]
 ```
 
 ### Over HTTP
