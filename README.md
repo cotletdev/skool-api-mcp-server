@@ -1,5 +1,7 @@
 # Skool API and MCP server, self-hosted
 
+<!-- mcp-name: dev.cotlet/skool -->
+
 A **Skool API** and a **Skool MCP server** you run on your own computer, in Python, on the session of your own Google Chrome. All 69 Skool tools we run in production at [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server): members, membership requests, posts, comments, polls, Classroom, Calendar, group settings, Skool Chat and stats.
 
 Skool has no public API and no official MCP server. This repo gives you both:
@@ -19,7 +21,7 @@ It is for technical people who want to run it themselves, **for noncommercial us
 uv tool install skool-api-mcp                  # or: pip install skool-api-mcp
 skool-mcp connect                                  # reads your Skool session from Chrome
 skool-mcp call list_groups
-claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp
+claude mcp add skool -- uvx skool-api-mcp mcp
 ```
 
 ## Contents
@@ -69,7 +71,7 @@ uv tool install skool-api-mcp       # or: pipx install skool-api-mcp, or: pip in
 skool-mcp --version
 ```
 
-MCP clients can also run it with no install: `uvx --from skool-api-mcp skool-mcp mcp`.
+MCP clients can also run it with no install: `uvx skool-api-mcp mcp`.
 
 From source:
 
@@ -153,9 +155,9 @@ The MCP server lists every tool with its input schema, a description written for
 ### Claude Code
 
 ```bash
-claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp
+claude mcp add skool -- uvx skool-api-mcp mcp
 # read only:
-claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp --read-only
+claude mcp add skool -- uvx skool-api-mcp mcp --read-only
 ```
 
 ### Claude Desktop
@@ -167,7 +169,7 @@ claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp --read-only
   "mcpServers": {
     "skool": {
       "command": "uvx",
-      "args": ["--from", "skool-api-mcp", "skool-mcp", "mcp"]
+      "args": ["skool-api-mcp", "mcp"]
     }
   }
 }
@@ -184,7 +186,7 @@ claude mcp add skool -- uvx --from skool-api-mcp skool-mcp mcp --read-only
 ```toml
 [mcp_servers.skool]
 command = "uvx"
-args = ["--from", "skool-api-mcp", "skool-mcp", "mcp"]
+args = ["skool-api-mcp", "mcp"]
 ```
 
 ### Over HTTP

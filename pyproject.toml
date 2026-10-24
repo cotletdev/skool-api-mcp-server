@@ -24,6 +24,7 @@ Source = "https://github.com/cotletdev/skool-api-mcp-server"
 
 [project.scripts]
 skool-mcp = "skool_api_mcp.cli:main"
+skool-api-mcp = "skool_api_mcp.cli:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]

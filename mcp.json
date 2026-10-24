@@ -3,9 +3,7 @@
     "skool": {
       "command": "uvx",
       "args": [
-        "--from",
         "skool-api-mcp",
-        "skool-mcp",
         "mcp"
       ]
     }
