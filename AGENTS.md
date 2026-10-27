@@ -1,6 +1,6 @@
 # AGENTS.md
 
-You are an AI agent in a clone of this repo. It is a self-hosted Skool API and MCP server: 69 tools that work in the user's own Skool account, through the session of their own Google Chrome. Your usual job is one of three: set it up for the user, use its tools for them, or change its code. Human docs: `README.md`.
+You are an AI agent in a clone of this repo. It is a self-hosted Skool API and MCP server: 71 tools that work in the user's own Skool account, through the session of their own Google Chrome. Your usual job is one of three: set it up for the user, use its tools for them, or change its code. Human docs: `README.md`.
 
 ## Before you start
 

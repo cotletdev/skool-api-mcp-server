@@ -72,7 +72,7 @@ async def page_data(ctx: ToolContext, path: str, params: dict[str, Any], *, foll
     raise ToolError("Skool did not answer.", ErrorCode.TARGET_ERROR)
 
 
-# Never a tool : the account's own sign-in, email, password, name and settings, and anything that
+# Never a tool: the account's own sign-in, email, password, name and settings, and anything that
 # moves money (plans, payments, payouts, billing). Every api2 request goes through `_guard`, so a tool cannot
 # reach them by mistake.
 _NEVER = re.compile(

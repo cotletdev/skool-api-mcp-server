@@ -2,7 +2,7 @@
 
 <!-- mcp-name: dev.cotlet/skool -->
 
-A **Skool API** and a **Skool MCP server** you run on your own computer, in Python, on the session of your own Google Chrome. All 69 Skool tools we run in production at [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server): members, membership requests, posts, comments, polls, Classroom, Calendar, group settings, Skool Chat and stats.
+A **Skool API** and a **Skool MCP server** you run on your own computer, in Python, on the session of your own Google Chrome. All 71 Skool tools we run in production at [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server): members, membership requests, posts, comments, polls, Classroom, video transcripts, Calendar, group settings, Skool Chat and stats.
 
 Skool has no public API and no official MCP server. This repo gives you both:
 
@@ -12,7 +12,7 @@ Skool has no public API and no official MCP server. This repo gives you both:
 
 It is for technical people who want to run it themselves, **for noncommercial use only** ([license](#license)). If you want it running 24/7 on a server, kept working when Skool changes its site, for a team or a business, use the [hosted version at cotlet.dev](https://cotlet.dev/integrations/skool-api-mcp-server).
 
-[![Skool MCP server](https://img.shields.io/badge/Skool%20MCP-69%20tools-6d4aef)](#all-69-tools)
+[![Skool MCP server](https://img.shields.io/badge/Skool%20MCP-71%20tools-6d4aef)](#all-71-tools)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-141318)](#requirements)
 [![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial-141318)](https://github.com/cotletdev/skool-api-mcp-server/blob/main/LICENSE)
 [![MCP Badge](https://lobehub.com/badge/mcp/cotletdev-skool-api-mcp-server)](https://lobehub.com/mcp/cotletdev-skool-api-mcp-server)
@@ -33,7 +33,7 @@ claude mcp add skool -- uvx skool-api-mcp mcp
 - [MCP server](#mcp-server)
 - [REST API](#rest-api)
 - [Python and the example scripts](#python-and-the-example-scripts)
-- [All 69 tools](#all-69-tools)
+- [All 71 tools](#all-71-tools)
 - [Configuration](#configuration)
 - [Security and your Skool account](#security-and-your-skool-account)
 - [Errors](#errors)
@@ -284,7 +284,7 @@ python examples/approve_membership_requests.py --group yourgroup --match busines
 
 On a schedule, cron on your own computer works while it is on: `0 8 * * * cd ~/skool-api-mcp-server && .venv/bin/python examples/group_stats.py --group yourgroup`.
 
-## All 69 tools
+## All 71 tools
 
 `group` is the URL name of a community: `yourgroup` for `skool.com/yourgroup`. `skool-mcp tools` prints this list, `skool-mcp tools --json` adds the input schemas.
 
@@ -357,6 +357,13 @@ On a schedule, cron on your own computer works while it is on: `0 8 * * * cd ~/s
 | `update_lesson` | write | `PATCH /groups/{group}/lessons/{lesson_id}` | Change a lesson's title, text or video link. Admins only. |
 | `mark_lesson_complete` | write | `PUT /groups/{group}/lessons/{lesson_id}/completion` | Mark a lesson done in your own course progress, or undo it. |
 
+### Videos
+
+| Tool | Access | REST route | What it does |
+|---|---|---|---|
+| `list_videos` | read | `GET /groups/{group}/videos` | Videos in the group's Classroom lessons and feed posts, uploaded or linked. |
+| `get_video_transcript` | read | `GET /groups/{group}/videos/{video_id}/transcript` | The spoken text of a video uploaded to a lesson or post, from Skool's captions. |
+
 ### Calendar
 
 | Tool | Access | REST route | What it does |
@@ -421,7 +428,7 @@ Never built, on purpose: your Skool sign-in, email, password, name and profile s
 - **The session file is yours.** `session.json` is created with mode 0600. Anyone who has it can act as you on Skool, so keep it out of git and shared folders.
 - **Local by default.** `serve` binds to `127.0.0.1` and refuses another address without `SKOOL_MCP_TOKEN`.
 - **skool.com only.** Requests and redirects outside skool.com are refused.
-- **Read-only mode.** `--read-only` or `SKOOL_MCP_READ_ONLY=1` exposes the 28 read tools only.
+- **Read-only mode.** `--read-only` or `SKOOL_MCP_READ_ONLY=1` exposes the 30 read tools only.
 - **Actions reach real people.** Posts, comments, DMs, invitations and approvals go out under your name. MCP clients ask before running them; a script does not, so try it on a test group first.
 - **Do not spam.** Mass DMs or invitations break Skool's rules and can get your account limited. You are responsible for what runs in your account.
 
@@ -444,7 +451,7 @@ The REST API answers `{"error": "<code>", "message": "..."}`. The MCP server ret
 
 | | This repo | [Cotlet, hosted](https://cotlet.dev/integrations/skool-api-mcp-server) |
 |---|---|---|
-| Tools | the same 69 | the same 69 |
+| Tools | the same 71 | the same 71 |
 | Runs | on your computer, while it is on | in the cloud, 24/7 |
 | Skool session | your Chrome, cookies in a local file | your own Cloud Browser in the EU, profile encrypted with AES-256-GCM |
 | When Skool changes its site | `git pull` once we have fixed it | fixed for you, every tool tested daily |

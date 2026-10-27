@@ -44,7 +44,8 @@ EXAMPLE_RESPONSE: dict[str, Any] = {
     details=(
         "Returns one Classroom lesson as its page shows it: the text (formatting dropped, paragraphs and "
         "list items kept) and the linked video. uploaded_video is true when the video was uploaded to "
-        "Skool; that video and attached files are not returned. Only lessons this account can open."
+        "Skool; get_video_transcript reads what is said in it. Attached files are not returned. Only "
+        "lessons this account can open."
     ),
     input_schema=INPUT_SCHEMA,
     route="GET /groups/{group}/courses/{course_id}/lessons/{lesson_id}",
