@@ -47,6 +47,8 @@ Free for your own use, your own business included ([license](#license)).
 [![License: Elastic 2.0](https://img.shields.io/badge/license-Elastic%202.0-141318)](https://github.com/cotletdev/skool-api-mcp-server/blob/main/LICENSE)
 [![MCP Badge](https://lobehub.com/badge/mcp/cotletdev-skool-api-mcp-server)](https://lobehub.com/mcp/cotletdev-skool-api-mcp-server)
 
+Also on Odel: https://odel.app/modules/cotlet/skool
+
 ```bash
 uv tool install skool-api-mcp                  # or: pip install skool-api-mcp
 skool-mcp connect                                  # reads your Skool session from Chrome
