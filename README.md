@@ -1,4 +1,4 @@
-# Skool API and MCP server: connect Skool to ChatGPT and Claude
+# Skool API integration and MCP server: connect Skool to ChatGPT and Claude
 
 <!-- mcp-name: dev.cotlet/skool -->
 
@@ -22,13 +22,63 @@ As of November 2026, this repo is the missing piece: 71 Skool tools for AI assis
 |---|---|---|
 | For | community owners and admins | developers |
 | Setup | sign in to Skool once, about 5 minutes, nothing to install | Python and a terminal |
-| Works in | ChatGPT and Claude apps, on your phone too, Cursor, Codex, OpenClaw, any MCP client, n8n, Make, Zapier, REST API | Claude Code, Claude Desktop, Cursor, Codex on your computer |
+| Works in | ChatGPT and Claude apps, on your phone too, Cursor, Codex, OpenClaw, any MCP client, n8n, Make, Zapier, your own API endpoints (Custom API) | Claude Code, Claude Desktop, Cursor, Codex on your computer |
 | Runs | 24/7, your computer can be off | while your computer is on |
 | Price | 7 days free, no card | free |
 
 Cotlet is best for community owners and admins who want ChatGPT, Claude or another AI agent to work in Skool for them, with nothing to install.
 
 **[Start free at cotlet.dev →](https://cotlet.dev/signup?app=skool&utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=top-button)**
+
+## What Skool community owners ask their AI to do in Skool
+
+| Job | Ask your AI | Make it repeat |
+|---|---|---|
+| Member list | "Export my member list with tier, join date and email to a spreadsheet." | Weekly |
+| Membership-question answers | "Copy yesterday's membership-question answers into my sheet with name and email." | Every morning |
+| New paid members to your CRM | "List this week's new paid members with their answers, ready for GoHighLevel or Kit." | Daily, through your own endpoint |
+| Members going quiet | "Which members have not been active for 30 days? Sort them by tier." | Weekly |
+| Cancelled members | "List members whose paid membership ended this week, so I can remove them from my app." | Daily |
+| Course access | "Unlock the Pro course for the buyers in this list. Show me before you change anything." | When a sale comes in elsewhere |
+| Pending requests | "List pending membership requests and flag the ones that look like spam. Approve nothing yet." | Daily |
+| Revenue and affiliates | "Show this month's revenue, new paid members, cancellations and affiliate payouts." | Monthly |
+| Answers from your classroom | "Find the lesson in my classroom that answers this member's question." | When a member asks |
+| Post drafts | "Draft next week's three community posts from my notes. I will post them myself." | Weekly |
+| Leaving Skool | "Download my member list and my course outlines before I move." | Once |
+
+Your AI asks you before it changes anything. It drafts posts and messages for you to send yourself: Skool's platform policy asks owners not to use bots to post, comment or message others. Payments stay in your hands: Cotlet refuses payments.
+
+## Your own Skool API, built with Cotlet (hosted)
+
+Skool gives you no public API, only a group key for its Zapier plugin on the Pro plan. With Cotlet you build your own: your AI does the job once in your Cloud Browser, you save it as an endpoint, and you call it from Google Sheets, Airtable, GoHighLevel, Kit, Mailchimp, n8n, Make, Zapier, your own app.
+
+Examples you can build in a few minutes (none of them exists until you build it):
+
+| Endpoint you build | What it returns or does |
+|---|---|
+| `members-export` | name, email, tier, join date and status of each member |
+| `new-paid-members` | paid members since a date, with their membership-question answers |
+| `membership-answers` | answers to membership questions since a date |
+| `inactive-members` | members with no activity for a number of days |
+| `cancelled-members` | members whose paid membership ended in a period |
+| `pending-requests` | membership requests waiting for approval |
+| `revenue-summary` | revenue, new paid members, cancellations and affiliate payouts for a period |
+| `unlock-course` | unlocks a course for a member (writes only after you allow it) |
+| `invite-member` | invites a member by email (writes only after you allow it) |
+
+Call it with your Cotlet API key, JSON in and JSON out:
+
+```bash
+curl -X POST https://cotlet.dev/api/v1/custom/members-export \
+  -H "Authorization: Bearer $COTLET_API_KEY" -H "Content-Type: application/json" -d '{}'
+```
+
+Limits: one call runs up to 90 seconds, writes wait for your consent, payments are blocked. Start here: https://cotlet.dev/app/custom-api/new?app=skool
+
+## Find it on Cotlet.dev
+
+- [Skool MCP server on Cotlet.dev](https://cotlet.dev/integrations/skool-api-mcp-server?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=old-repo)
+- [Does Skool have an API or MCP server?](https://cotlet.dev/api-status/skool?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=old-repo)
 
 ## Run it yourself
 
@@ -37,7 +87,7 @@ A **Skool API** and a **Skool MCP server** you run on your own computer, in Pyth
 Skool has no public API and no official MCP server. This repo gives you both:
 
 - **MCP server** for Claude Code, Claude Desktop, Cursor, Codex and any MCP client, over stdio or HTTP. [Setup](#mcp-server)
-- **REST API** on `http://127.0.0.1:8787/api/v1/skool`, with OpenAPI docs at `/docs`. [Setup](#rest-api)
+- **REST API** on `http://127.0.0.1:8787/api/v1/skool`, with OpenAPI docs at `/docs`. [Setup](#rest-api-local-this-repo)
 - **Python**: `call("list_members", group="yourgroup")`, plus 16 ready scripts in [`examples/`](https://github.com/cotletdev/skool-api-mcp-server/blob/main/examples/).
 
 Free for your own use, your own business included ([license](#license)).
@@ -64,7 +114,7 @@ claude mcp add skool -- uvx skool-api-mcp mcp
 - [Install](#install)
 - [Connect your Chrome](#connect-your-chrome)
 - [MCP server](#mcp-server)
-- [REST API](#rest-api)
+- [REST API](#rest-api-local-this-repo)
 - [Python and the example scripts](#python-and-the-example-scripts)
 - [All 71 tools](#all-71-tools)
 - [Configuration](#configuration)
@@ -75,6 +125,42 @@ claude mcp add skool -- uvx skool-api-mcp mcp
 - [License](#license)
 
 ## Questions from Skool users
+
+**How do I connect Skool to GoHighLevel, Kit or Mailchimp?**
+
+Build a `new-paid-members` endpoint once and call it from GoHighLevel, Kit, Mailchimp, Zapier, Make or n8n, with the tier and the membership-question answers as tags.
+
+**How do I connect Skool to Make or n8n beyond inviting a member?**
+
+Skool's Make app has one module. With Cotlet you build your own Skool endpoints, such as `members-export` or `cancelled-members`, and call them from Make or n8n.
+
+**How do I keep a live Skool member list in Google Sheets or Airtable?**
+
+Call your `members-export` endpoint from Google Sheets or Airtable on a schedule, or ask your AI to download the list each week.
+
+**How do I remove access in my own app when a Skool membership ends?**
+
+Skool's Zapier app has no trigger for ended memberships. A `cancelled-members` endpoint lists them every day, and your app or n8n removes their access.
+
+**How do I give buyers from ThriveCart, Stripe or Square their Skool course?**
+
+Call your own `unlock-course` endpoint when the sale comes in. It writes only after you allow writes for it.
+
+**How do I export my Skool member list with emails?**
+
+Your AI downloads the member list your owner login can see, with tier and join date, as a spreadsheet.
+
+**Can AI reply to comments or send DMs in Skool for me?**
+
+Read Skool's platform policy first: it asks owners not to use bots to post, comment or message others, and not to scrape data or make automation requests. Use your AI to draft replies and posts that you send yourself.
+
+**Can AI tell me which Skool members are likely to cancel?**
+
+It lists members who went quiet, sorted by tier and join date, so you can reach out yourself before they leave.
+
+**Is Cotlet affiliated with Skool?**
+
+No. Cotlet is independent and not affiliated with Skool.
 
 **Does Skool have an API?**
 No. Skool has no public API and no developer docs. The only official connection is the Zapier plugin on the Pro plan, which sends new paid members and Membership Questions answers out, invites a member and unlocks a course. It cannot list all members, approve requests, post, comment, send DMs or read stats. This repo and [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=faq-api) give you 71 Skool tools as a REST API and an MCP server.
@@ -279,7 +365,7 @@ Then ask your agent things like:
 >
 > *Tell me new members, churn and MRR for the last 30 days.*
 
-## REST API
+## REST API (local, this repo)
 
 ```bash
 skool-mcp serve                    # http://127.0.0.1:8787, MCP at /mcp, docs at /docs
@@ -527,7 +613,7 @@ The REST API answers `{"error": "<code>", "message": "..."}`. The MCP server ret
 | Skool session | your Chrome, cookies in a local file | your own Cloud Browser in the EU, profile encrypted with AES-256-GCM |
 | When Skool changes its site | `git pull` once we have fixed it | fixed for you, every tool tested daily |
 | Approvals | your MCP client asks per call | posts, DMs and approvals wait for your OK, switchable per tool |
-| Works with | MCP clients on your machine, local scripts | Claude.ai and ChatGPT connectors, n8n, Make, Zapier, any HTTP client |
+| Works with | MCP clients on your machine, local scripts | Claude.ai and ChatGPT connectors, n8n, Make, Zapier, any HTTP client through your own endpoints (Custom API) |
 | Who may use it | you and your own business | you, teams, businesses, agencies |
 | Price | free | free 7-day trial with 2,000 credits, no card; then one-time packs from $29 for 5,000 credits |
 
