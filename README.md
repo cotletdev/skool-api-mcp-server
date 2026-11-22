@@ -78,7 +78,6 @@ Limits: one call runs up to 90 seconds, writes wait for your consent, payments a
 ## Find it on Cotlet.dev
 
 - [Skool MCP server on Cotlet.dev](https://cotlet.dev/integrations/skool-api-mcp-server?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=old-repo)
-- [Does Skool have an API or MCP server?](https://cotlet.dev/api-status/skool?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=old-repo)
 
 ## Run it yourself
 
