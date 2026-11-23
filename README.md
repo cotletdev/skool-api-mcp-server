@@ -37,16 +37,18 @@ Cotlet is best for community owners and admins who want ChatGPT, Claude or anoth
 | Member list | "Export my member list with tier, join date and email to a spreadsheet." | Weekly |
 | Membership-question answers | "Copy yesterday's membership-question answers into my sheet with name and email." | Every morning |
 | New paid members to your CRM | "List this week's new paid members with their answers, ready for GoHighLevel or Kit." | Daily, through your own endpoint |
-| Members going quiet | "Which members have not been active for 30 days? Sort them by tier." | Weekly |
 | Cancelled members | "List members whose paid membership ended this week, so I can remove them from my app." | Daily |
 | Course access | "Unlock the Pro course for the buyers in this list. Show me before you change anything." | When a sale comes in elsewhere |
 | Pending requests | "List pending membership requests and flag the ones that look like spam. Approve nothing yet." | Daily |
 | Revenue and affiliates | "Show this month's revenue, new paid members, cancellations and affiliate payouts." | Monthly |
+| Welcome DMs | "Send a welcome DM to each member who joined today, with a link to the start-here lesson. Show me the text first." | Daily |
+| Members going quiet | "Which members have not been active for 30 days? Draft a short DM to each and send them after my OK." | Weekly |
+| Posts on your schedule | "Write next week's three community posts from my notes and schedule them. Show me each one first." | Weekly |
+| Unanswered posts | "Draft replies to posts with no answer in the last 24 hours and post them after my OK." | Daily |
 | Answers from your classroom | "Find the lesson in my classroom that answers this member's question." | When a member asks |
-| Post drafts | "Draft next week's three community posts from my notes. I will post them myself." | Weekly |
 | Leaving Skool | "Download my member list and my course outlines before I move." | Once |
 
-Your AI asks you before it changes anything. It drafts posts and messages for you to send yourself: Skool's platform policy asks owners not to use bots to post, comment or message others. Payments stay in your hands: Cotlet refuses payments.
+Your AI asks you before it posts, sends a message or changes anything. Payments stay in your hands: Cotlet refuses payments.
 
 ## Your own Skool API, built with Cotlet (hosted)
 
@@ -65,6 +67,8 @@ Examples you can build in a few minutes (none of them exists until you build it)
 | `revenue-summary` | revenue, new paid members, cancellations and affiliate payouts for a period |
 | `unlock-course` | unlocks a course for a member (writes only after you allow it) |
 | `invite-member` | invites a member by email (writes only after you allow it) |
+| `send-dm` | sends a direct message to the member you name (writes only after you allow it) |
+| `new-post` | publishes a post in the category you name (writes only after you allow it) |
 
 Call it with your Cotlet API key, JSON in and JSON out:
 
@@ -151,7 +155,11 @@ Your AI downloads the member list your owner login can see, with tier and join d
 
 **Can AI reply to comments or send DMs in Skool for me?**
 
-Read Skool's platform policy first: it asks owners not to use bots to post, comment or message others, and not to scrape data or make automation requests. Use your AI to draft replies and posts that you send yourself.
+Yes. Your agent drafts replies and DMs, for example a welcome message to each new member, and posts or sends them after your OK.
+
+**Can AI schedule my Skool posts?**
+
+Yes. It writes posts from your notes and schedules them in your community, after you approve each one.
 
 **Can AI tell me which Skool members are likely to cancel?**
 
