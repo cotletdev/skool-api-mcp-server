@@ -83,6 +83,142 @@ Limits: one call runs up to 90 seconds, writes wait for your consent, payments a
 
 - [Skool MCP server on Cotlet.dev](https://cotlet.dev/integrations/skool-api-mcp-server?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=old-repo)
 
+## What you can ask your AI to do in Skool
+
+These are real jobs Skool users asked about. Cotlet lets ChatGPT, Claude or any MCP client do them in your own signed-in Skool account.
+
+### New members and your tools
+
+#### How do I connect Skool to GoHighLevel so every new paid member and their membership-question answers become a contact with the right tag?
+
+Partly. Skool's Zapier plugin, on the Pro plan, sends new paid members and Membership Questions answers out as they arrive. With Cotlet, your agent reads your members and their answers in Skool and adds each to GoHighLevel with a tag, both signed in in your Cloud Browser. Nothing is added until you say yes.
+
+Ask your agent: "Read this week's new Skool members with their membership answers and add each to GoHighLevel as a contact tagged Skool member."
+
+As an API endpoint: Yes. Save the new-member read as an endpoint in Cotlet and call it every day from n8n or Make to push contacts into GoHighLevel.
+
+#### How do I add new Skool members to Kit, Mailchimp or Flodesk automatically, with tags by tier?
+
+Partly. Skool has no email tool sync of its own, only the Pro-plan Zapier plugin for new paid members. With Cotlet, your agent reads new members in your signed-in Skool group and adds them to Kit, Mailchimp or Flodesk with the tag you name. Nothing is added until you say yes.
+
+Ask your agent: "Add every Skool member who joined this week to my Kit list with the tag for their tier. Show me the list first."
+
+As an API endpoint: Yes. Save the new-member read as an endpoint in Cotlet and call it daily from n8n, Make or Zapier to update your email list.
+
+#### How do I link paid Skool members to my own app and remove their access when their Skool subscription ends?
+
+Partly. Skool's Zapier plugin has no trigger for cancelled members. With Cotlet, your agent reads the churned and cancelling members in your Skool group and removes or blocks the same people in your own web app, signed in in the same Cloud Browser. Nothing changes until you say yes.
+
+Ask your agent: "List Skool members who cancelled or left this week and show me which of them still have access in my membership site."
+
+As an API endpoint: Yes. Save the cancelled-member list as an endpoint in Cotlet and call it every night from n8n, Make or a script to update your app.
+
+#### I sell through ThriveCart, Stripe or Square outside Skool. How do I give buyers the right Skool course access automatically?
+
+Partly. Skool's Zapier plugin, on the Pro plan, can give a member access to a course. With Cotlet, your agent reads new buyers in ThriveCart or Stripe and gives each the course in their Membership settings in Skool. Nothing is changed until you say yes.
+
+Ask your agent: "Read today's new buyers in ThriveCart and give each the Advanced course in their Skool Membership settings. Show me the list first."
+
+As an API endpoint: Yes. Save the grant step as an endpoint in Cotlet and call it from n8n or Make whenever a new purchase arrives.
+
+### Member lists and exports
+
+#### How do I keep a live member list from Skool in Google Sheets or Airtable (status, tier, join date)?
+
+Yes. Skool's own Zapier plugin only sends new paid members as they join. With Cotlet, your agent reads the Members tab in your signed-in Skool group and updates a Google Sheet or Airtable with name, status, level and join date. Nothing is changed until you say yes.
+
+Ask your agent: "Read all my active and cancelling Skool members and update my Google Sheet with name, status, level and join date."
+
+As an API endpoint: Yes. Save the member read as an endpoint in Cotlet and call it every morning from n8n, Make or Zapier to refresh the sheet or Airtable base.
+
+#### How do I export my Skool member list with email addresses?
+
+Partly. Skool's Members tab has an Export button that downloads membership-question answers, and its help centre names no email column. With Cotlet, your agent reads your member list and puts name, join date, level and any email given in a Membership Questions answer into one file.
+
+Ask your agent: "Read my Skool member list and give me one CSV with name, join date, level and the email from the membership question answers."
+
+#### How do I send Skool membership-question answers to a spreadsheet every day, without copying them by hand?
+
+Yes. Skool shows answers on each member's Questions tab, and its Zapier plugin on the Pro plan sends them as they are submitted. With Cotlet, your agent reads the answers in your signed-in Skool group and adds each as a row to your Google Sheet. Nothing is added until you say yes.
+
+Ask your agent: "Add yesterday's new Skool members and their three membership answers to my Google Sheet, one row each."
+
+As an API endpoint: Yes. Save the answer read as an endpoint in Cotlet and call it every morning from n8n, Make or Zapier to fill the sheet.
+
+#### How do I bulk-import members into Skool from a CSV, and what happens to their course access?
+
+Partly. Skool's Invite tab imports a CSV of emails and sends the invites on its own. With Cotlet, your agent can then give each member who joins the right course in their Membership settings, following the list you provide. Nothing is changed until you say yes.
+
+Ask your agent: "Take this list of members who joined from my old platform and give each the Starter course in Skool once they have joined."
+
+#### How do I download all my posts, course videos and member data before leaving Skool?
+
+Partly. Skool's help centre shows no full export of posts, comments or videos. With Cotlet, your agent goes through your signed-in Skool group and saves your posts, comments, lesson text, video links and member list as files you keep. Video files themselves are not copied.
+
+Ask your agent: "Save every post and comment in my Skool group, the text and video link of each Classroom lesson, and my member list as separate files."
+
+### Welcomes, replies and posts
+
+#### Can AI send each new Skool member a personal welcome DM and a Day 1, Day 3, Day 7 follow-up, or is the built-in AutoDM all I get?
+
+Partly. Skool's AutoDM, on the Pro plan, sends one fixed welcome 1 to 5 minutes after someone joins, with no Day 3 or Day 7 steps. With Cotlet, your agent drafts a personal message for each new member. Skool's platform policy bars bots that message members, so you send each one. Nothing is sent until you say yes.
+
+Ask your agent: "List members who joined this week and draft a short personal welcome for each with their first name and the Start Here lesson link."
+
+#### Can ChatGPT or Claude reply to comments in my Skool community in my voice, and is that allowed by Skool?
+
+Partly. Skool's platform policy says not to use bots to post, comment or message others, so unattended replies put your account at risk. With Cotlet, your agent finds posts and comments that have no answer and drafts a reply in your voice for each. Nothing is posted until you say yes.
+
+Ask your agent: "Find Skool posts from the last 3 days with no comments and draft a reply in my voice for each. Post nothing yet."
+
+#### Can an AI agent answer member questions inside my Skool community using my classroom content?
+
+Not on its own. Skool has no built-in AI assistant, and Cotlet is not a bot that answers members around the clock. With Cotlet, your agent reads a member's question and your Classroom lessons and drafts an answer with the lesson link. Nothing is posted until you say yes.
+
+Ask your agent: "Read the unanswered questions in my Skool community, find the matching Classroom lesson for each and draft an answer with the link."
+
+#### Can AI schedule and publish my weekly Skool posts, since Skool has no native scheduler?
+
+Yes. Skool's help centre shows no scheduled posts. With Cotlet, your agent writes the post, publishes it in the category you name, pins it and unpins last week's, in your signed-in Skool group. Nothing is posted until you say yes.
+
+Ask your agent: "Post this week's challenge in the Announcements category of my Skool group, pin it and unpin last week's challenge."
+
+As an API endpoint: Yes. Save the weekly post as an endpoint in Cotlet and call it every Monday from n8n, Make or Zapier.
+
+#### How do I send one message or email to all my Skool members at once, since @everyone does not work?
+
+Not on its own. Skool's help centre shows no send to all members option. With Cotlet, your agent reads your member list and drafts a message for each person, or an email in your Gmail if you have their address. Skool's platform policy bars bots that message members. Nothing is sent until you say yes.
+
+Ask your agent: "Read my Skool member list and draft the same short announcement about Thursday's call for each member. Send nothing yet."
+
+### Moderation and retention
+
+#### Can AI screen Skool membership requests and flag spam or fake accounts before I approve them?
+
+Yes. Skool's AutoMod flags high-risk accounts on its own, and its Instant approval plugin lets everyone in. With Cotlet, your agent reads each pending request and its Membership Questions answers, sorts them into approve, decline and ask you, and gives a reason. Nothing is approved until you say yes.
+
+Ask your agent: "Read my pending Skool membership requests, flag spam and copied answers, and list who to approve, who to decline and who needs me."
+
+As an API endpoint: Yes. Save the screening as an endpoint in Cotlet and call it every morning from n8n, Make or Zapier to get the sorted queue by email.
+
+#### Can AI tell me which Skool members went silent and are likely to cancel, and message them before they do?
+
+Partly. Skool's help centre shows no way to find silent members. With Cotlet, your agent reads your members' level, points and cancelling status, lists those who have gone quiet and drafts a check-in for each. Skool's platform policy bars bots that message members. Nothing is sent until you say yes.
+
+Ask your agent: "List Skool members who are cancelling or have low points and did not join this month, and draft a short check-in for each."
+
+As an API endpoint: Yes. Save the quiet-member list as an endpoint in Cotlet and call it every Monday from n8n, Make or Zapier.
+
+### Revenue and payouts
+
+#### How do I track Skool affiliate payouts and revenue per community in one place?
+
+Yes. Skool shows payouts, the Affiliates tab and income reports on separate screens for each group. With Cotlet, your agent opens them in your signed-in Skool account and gives you one table of payouts, affiliate earnings and revenue for each community.
+
+Ask your agent: "Read the payouts, affiliate earnings and revenue for each of my Skool groups this month and give me one table."
+
+As an API endpoint: Yes. Save the revenue read as an endpoint in Cotlet and call it on the first of each month from n8n, Make or a script.
+
 ## Run it yourself
 
 A **Skool API** and a **Skool MCP server** you run on your own computer, in Python, on the session of your own Google Chrome. All 71 Skool tools we run in production at [Cotlet](https://cotlet.dev/integrations/skool-api-mcp-server?utm_source=github&utm_medium=readme&utm_campaign=skool&utm_content=intro): members, membership requests, posts, comments, polls, Classroom, video transcripts, Calendar, group settings, Skool Chat and stats.
